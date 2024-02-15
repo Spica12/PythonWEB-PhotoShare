@@ -1,8 +1,13 @@
 [tool.poetry]
 name = "pythonweb-photoshare"
 version = "0.1.0"
-description = ""
-authors = ["Spica12 <vitaly.savenko12@gmail.com>"]
+description = "This is a simple photo-sharing app by Python 17 Web Group-01"
+authors = ["Spica12 <vitaly.savenko12@gmail.com>",
+           "Serhii Symbirtsev <example@gmail.com",
+           "Andrii Kononov <example@gmail.com",
+           "Bogdan Turkot <example@gmail.com",
+           "Sergiy Dovgopolyk <example@gmail.com",
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
