@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "pythonweb-photoshare"
+version = "0.1.0"
+description = ""
+authors = ["Spica12 <vitaly.savenko12@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = {extras = ["all"], version = "^0.109.2"}
+alembic = "^1.13.1"
+sqlalchemy = "^2.0.27"
+asyncpg = "^0.29.0"
+passlib = "^1.7.4"
+python-jose = "^3.3.0"
+fastapi-mail = "^1.4.1"
+fastapi-users = {extras = ["sqlalchemy"], version = "^12.1.3"}
+cloudinary = "^1.38.0"
+psycopg-binary = "^3.1.18"
+
+
+[tool.poetry.group.test.dependencies]
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
