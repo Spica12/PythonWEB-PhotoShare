@@ -20,6 +20,16 @@ class PhotoModel(Base):
     )
 
 
+class TransformedImageLinkModel(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    image_url: Mapped[str] = mapped_column(String(255), nullable=True)
+    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
+    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="transformed_images")
+    created_at: Mapped[datetime] = mapped_column(
+        "created_at", DateTime, default=func.now()
+    )
+
+
 class TagModel(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
