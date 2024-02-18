@@ -48,3 +48,18 @@ class TokenModel(Base):
     updated_at: Mapped[DateTime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
+
+
+class BlackListModel(Base):
+    __tablename__ = "blacklist"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    access_token: Mapped[str] = mapped_column(String(255), nullable=True)
+
+    created_at: Mapped[DateTime] = mapped_column(
+        "created_at", DateTime, default=func.now()
+    )
+    # user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
+    # user: Mapped[UserModel] = relationship("UserModel", backref="tokens")
+    updated_at: Mapped[DateTime] = mapped_column(
+        "updated_at", DateTime, default=func.now(), onupdate=func.now()
+    )

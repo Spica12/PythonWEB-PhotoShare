@@ -1,6 +1,6 @@
 from sqlalchemy.orm import DeclarativeBase
 
-from users import UserModel, TokenModel
+from users import UserModel, TokenModel, BlackListModel
 from photos import (
     PhotoModel,
     TransformedImageLinkModel,
