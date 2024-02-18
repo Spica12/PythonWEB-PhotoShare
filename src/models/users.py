@@ -19,7 +19,7 @@ class UserModel(Base):
     id: Mapped[UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    username: Mapped[str] = mapped_column(String(255), nullable=False)
+    username: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -53,10 +53,7 @@ class TokenModel(Base):
 class BlackListModel(Base):
     __tablename__ = "blacklist"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    access_token: Mapped[str] = mapped_column(String(255), nullable=True)
-
+    token: Mapped[str] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    # user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
-    # user: Mapped[UserModel] = relationship("UserModel", backref="tokens")
