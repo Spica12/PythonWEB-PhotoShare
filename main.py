@@ -7,6 +7,10 @@ from src.dependencies.database import get_db
 
 app = FastAPI()
 
+app.include_router(auth.router_auth, prefix="/api")
+app.include_router(users.router_users, prefix="/api")
+app.include_router(images.router_images, prefix="/api")
+
 origins = ["*"]
 
 app.add_middleware(
@@ -17,6 +21,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/")
+def index():
+    return {"message": "Python WEB group #1 project"}
+    
 
 @app.get("/api/healthchecker")
 async def healthchecker(db: AsyncSession = Depends(get_db)):
