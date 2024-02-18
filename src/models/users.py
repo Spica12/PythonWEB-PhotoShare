@@ -26,10 +26,10 @@ class UserModel(Base):
     role: Mapped[Roles] = mapped_column(Enum(Roles), default=Roles.users, nullable=False)
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[DateTime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[DateTime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
 
@@ -42,9 +42,9 @@ class TokenModel(Base):
         UUID, ForeignKey("users.id"), nullable=False
     )
     user: Mapped[UserModel] = relationship("UserModel", backref="tokens")
-    created_at: Mapped[datetime] = mapped_column(
+    created_at: Mapped[DateTime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    updated_at: Mapped[datetime] = mapped_column(
+    updated_at: Mapped[DateTime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
