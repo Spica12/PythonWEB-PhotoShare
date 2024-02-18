@@ -2,7 +2,7 @@
 name = "pythonweb-photoshare"
 version = "0.1.0"
 description = "This is a simple photo-sharing app by Python 17 Web Group-01"
-authors = ["Vitalii Savenko <example@gmail.com>",
+authors = ["Spica12 <example@gmail.com>",
            "Serhii Symbirtsev <example@gmail.com",
            "Andrii Kononov <example@gmail.com",
            "Bogdan Turkot <example@gmail.com",
@@ -26,18 +26,6 @@ psycopg-binary = "3.1.18"
 
 [tool.poetry.group.test.dependencies]
 pytest = "8.0.0"
-aiosqlite = "^0.19.0"
-
-[tool.pytest.ini_option]
-addopts = "--doctest-modules"
-testpath = [
-    "tests",
-]
-pythonpath = ["."]
-
-filterwarnings = [
-    "ignore::DeprecationWarning",
-]
 
 [build-system]
 requires = ["poetry-core"]
