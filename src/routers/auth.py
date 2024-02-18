@@ -24,7 +24,18 @@ async def logout():
     pass
 
 
-@router_auth.get("/refresh_token", response_model="")
+@router_auth.get("/refresh", response_model="")
 async def refresh_token(credentials, db: AsyncSession = Depends(get_db)):
+    """
+    Refresh token
+    """
     # need response model, credentials
+    pass
+
+
+@router_auth.get("/email/{token}")
+async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
+    """
+    Email/user confirmation
+    """
     pass
