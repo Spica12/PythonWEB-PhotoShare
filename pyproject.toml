@@ -26,15 +26,15 @@ psycopg-binary = "3.1.18"
 
 [tool.poetry.group.test.dependencies]
 pytest = "8.0.0"
+aiosqlite = "^0.19.0"
 
 [tool.pytest.ini_option]
 addopts = "--doctest-modules"
 testpath = [
     "tests",
 ]
-pythonpath = [
-    ".",
-]
+pythonpath = ["."]
+
 filterwarnings = [
     "ignore::DeprecationWarning",
 ]
