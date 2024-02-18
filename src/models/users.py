@@ -5,7 +5,6 @@ from datetime import datetime
 from base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.dialects.sqlite import uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
@@ -48,6 +47,3 @@ class TokenModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
-
-
-
