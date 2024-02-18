@@ -25,3 +25,16 @@ class TagModel(Base):
     name: Mapped[str] = mapped_column(String(20), nullable=False)
 
 
+class CommentModel(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    content: Mapped[str] = mapped_column(String(255), nullable=False)
+    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
+    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="comments")
+    user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
+    user: Mapped[UserModel] = relationship("UserModel", backref="comments")
+    created_at: Mapped[datetime] = mapped_column(
+        "created_at", DateTime, default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        "updated_at", DateTime, default=func.now(), onupdate=func.now()
+    )
