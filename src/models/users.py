@@ -35,6 +35,7 @@ class UserModel(Base):
 
 
 class TokenModel(Base):
+    __tablename__ = "tokens"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     token: Mapped[str] = mapped_column(String(255), nullable=True)
     user_id: Mapped[UUID] = mapped_column(

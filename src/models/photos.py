@@ -7,6 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 
 class PhotoModel(Base):
+    __tablename__ = "photos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     image_url: Mapped[str] = mapped_column(String(255), nullable=True)
     description: Mapped[str] = mapped_column(String(255), nullable=True)
@@ -21,6 +22,7 @@ class PhotoModel(Base):
 
 
 class TransformedImageLinkModel(Base):
+    __tablename__ = "transformed_images"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     image_url: Mapped[str] = mapped_column(String(255), nullable=True)
     photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
@@ -31,11 +33,28 @@ class TransformedImageLinkModel(Base):
 
 
 class TagModel(Base):
+    __tablename__ = "tags"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(20), nullable=False)
 
 
+class PhotoTagModeld(Base):
+    __tablename__ = "photos_tags"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
+    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="tags")
+    tag_id: Mapped[int] = mapped_column(Integer, ForeignKey("tags.id"), nullable=False)
+    tag: Mapped[TagModel] = relationship("TagModel", backref="photos")
+    created_at: Mapped[datetime] = mapped_column(
+        "created_at", DateTime, default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        "updated_at", DateTime, default=func.now(), onupdate=func.now()
+    )
+
+
 class CommentModel(Base):
+    __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     content: Mapped[str] = mapped_column(String(255), nullable=False)
     photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
