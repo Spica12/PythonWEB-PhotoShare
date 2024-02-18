@@ -2,6 +2,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.routers import auth, users, photos
 
 from src.dependencies.database import get_db
 
@@ -9,7 +10,7 @@ app = FastAPI()
 
 app.include_router(auth.router_auth, prefix="/api")
 app.include_router(users.router_users, prefix="/api")
-app.include_router(images.router_images, prefix="/api")
+app.include_router(photos.router_photos, prefix="/api")
 
 origins = ["*"]
 
