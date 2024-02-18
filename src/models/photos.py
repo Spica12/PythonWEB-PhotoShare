@@ -1,6 +1,7 @@
 from datetime import datetime
 
-from base import Base, UserModel
+from src.models.base import Base
+from src.models.users import UserModel
 from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -38,7 +39,7 @@ class TagModel(Base):
     name: Mapped[str] = mapped_column(String(20), nullable=False)
 
 
-class PhotoTagModeld(Base):
+class PhotoTagModel(Base):
     __tablename__ = "photos_tags"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)

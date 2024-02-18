@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from base import Base
+from src.models.base import Base
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -60,6 +60,3 @@ class BlackListModel(Base):
     )
     # user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     # user: Mapped[UserModel] = relationship("UserModel", backref="tokens")
-    updated_at: Mapped[datetime] = mapped_column(
-        "updated_at", DateTime, default=func.now(), onupdate=func.now()
-    )
