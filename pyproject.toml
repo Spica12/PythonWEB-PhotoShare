@@ -2,7 +2,7 @@
 name = "pythonweb-photoshare"
 version = "0.1.0"
 description = "This is a simple photo-sharing app by Python 17 Web Group-01"
-authors = ["Spica12 <example@gmail.com>",
+authors = ["Vitalii Savenko <example@gmail.com>",
            "Serhii Symbirtsev <example@gmail.com",
            "Andrii Kononov <example@gmail.com",
            "Bogdan Turkot <example@gmail.com",
