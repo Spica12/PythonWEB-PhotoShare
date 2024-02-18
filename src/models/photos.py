@@ -13,10 +13,10 @@ class PhotoModel(Base):
     description: Mapped[str] = mapped_column(String(255), nullable=True)
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
     user: Mapped[UserModel] = relationship("UserModel", backref="photos")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    updated_at: Mapped[DateTime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
 
@@ -27,7 +27,7 @@ class TransformedImageLinkModel(Base):
     image_url: Mapped[str] = mapped_column(String(255), nullable=True)
     photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="transformed_images")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
 
@@ -45,10 +45,10 @@ class PhotoTagModeld(Base):
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="tags")
     tag_id: Mapped[int] = mapped_column(Integer, ForeignKey("tags.id"), nullable=False)
     tag: Mapped[TagModel] = relationship("TagModel", backref="photos")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    updated_at: Mapped[DateTime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
 
@@ -61,10 +61,10 @@ class CommentModel(Base):
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="comments")
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     user: Mapped[UserModel] = relationship("UserModel", backref="comments")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
-    updated_at: Mapped[DateTime] = mapped_column(
+    updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
 
@@ -77,6 +77,6 @@ class RatingModel(Base):
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="ratings")
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     user: Mapped[UserModel] = relationship("UserModel", backref="ratings")
-    created_at: Mapped[DateTime] = mapped_column(
+    created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
