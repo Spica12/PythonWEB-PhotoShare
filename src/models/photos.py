@@ -18,3 +18,10 @@ class PhotoModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
+
+
+class TagModel(Base):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(20), nullable=False)
+
+
