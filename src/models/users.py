@@ -21,7 +21,7 @@ class UserModel(Base):
     )
     username: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
+    password: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar: Mapped[str] = mapped_column(String(255), nullable=True)
     role: Mapped[Roles] = mapped_column(Enum(Roles), default=Roles.users, nullable=False)
     confirmed: Mapped[bool] = mapped_column(Boolean, default=False)

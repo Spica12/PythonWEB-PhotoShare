@@ -8,7 +8,7 @@ from src.schemas.users import UserSchema
 
 
 class UserRepo:
-    
+
     def __init__(self, db):
         self.db: AsyncSession = db
 
@@ -42,3 +42,14 @@ class UserRepo:
         await self.db.refresh(new_user)
 
         return new_user
+
+    async def update_refresh_token(self, user: UserModel, refresh_token: TokenModel | None):
+        stmt = select(TokenModel).filter_by(user_id=user.id)
+        token = await self.db.execute(stmt)
+        token = token.scalar_one_or_none()
+        if token:
+            token.token = refresh_token
+        else:
+            new_token = TokenModel(token=refresh_token, user_id=user.id)
+            self.db.add(new_token)
+        await self.db.commit()
