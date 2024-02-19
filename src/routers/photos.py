@@ -128,11 +128,33 @@ async def delete_comment(
     """
     pass
 
-@router_photos.get("/generate_qr_code/{url}")
-async def generate_qr_code(url: str):
+@router.post("/create_image_link/")
+def create_image_link(url: str, db: Session = Depends(get_db)):
     qr_code_service = QRCodeService()
-    qr_image = qr_code_service.generate_qr_code(url)
 
-    return StreamingResponse(io.BytesIO(qr_image.make_blob("png")), media_type="image/png")
+    # Create a new image link in the database
+    new_image_link = ImageLink(url=url)
+    db.add(new_image_link)
+    db.commit()
+    db.refresh(new_image_link)
 
+    # Generate QR code
+    qr_image = qr_code_service.generate_qr_code(str(new_image_link.id))
+
+    # Save QR code to the database
+    new_image_link.qr_code = qr_image.get_image().tobytes()
+    db.commit()
+
+    return {"image_link_id": new_image_link.id}
+
+
+@router.get("/get_qr_code/{image_link_id}")
+def get_qr_code(image_link_id: int, db: Session = Depends(get_db)):
+    # Get QR code from the database
+    image_link = db.query(ImageLink).filter(ImageLink.id == image_link_id).first()
+    if image_link is None:
+        raise HTTPException(status_code=404, detail="Image link not found")
+
+    # Return QR code as a StreamingResponse
+    return StreamingResponse(io.BytesIO(image_link.qr_code), media_type="image/png")
 
