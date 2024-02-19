@@ -34,9 +34,17 @@ class UserRepo:
         return user
 
     async def create_user(self, body: UserSchema):
+        # Get all exist users in db
+        stmt = select(UserModel)
+        users = await self.db.execute(stmt)
+        users = users.scalars().all()
+        # Create new user
         new_user = UserModel(
             **body.model_dump(), avatar=None
         )
+        # Check if users exist
+        if not users:
+            new_user.confirmed = True
         self.db.add(new_user)
         await self.db.commit()
         await self.db.refresh(new_user)

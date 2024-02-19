@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
-from models.users import UserModel
+from src.models.users import UserModel
 
 from src.dependencies.database import get_db
 
@@ -22,6 +22,7 @@ async def register(body: UserSchema, db: AsyncSession = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST
         )
+
     body.password = auth_service.get_password_hash(body.password)
     new_user = await auth_service.create_user(body, db)
     # background_tasks.add_task(
