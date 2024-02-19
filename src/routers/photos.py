@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.models.users import UserModel
+from src.services.auth import auth_service
 
 from src.dependencies.database import get_db
 from src.services.cloudinary import CloudinaryService
@@ -12,6 +14,7 @@ async def show_photos(
         limit: int = Query(10, ge=10, le=100),
         skip: int = Query(0, ge=0),
         db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
     Show all images with query parameters.
@@ -44,13 +47,14 @@ async def add_photo(
         overwrite: bool = Query(True),
         db: AsyncSession = Depends(get_db)
 ):
-    try:
+    # try:
         # Upload an image to Cloudinary
-        cloudinary_service.upload_photo(image_url, public_id, unique_filename, overwrite)
+    #     cloudinary_service.upload_photo(image_url, public_id, unique_filename, overwrite)
 
-        return {"message": "Image uploaded successfully!"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    #     return {"message": "Image uploaded successfully!"}
+    # except Exception as e:
+    #     raise HTTPException(status_code=500, detail=str(e))
+    ...
 
 
 @router_photos.delete("/{photo_id}", response_model=None, dependencies=None, status_code=None)
