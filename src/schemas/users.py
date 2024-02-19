@@ -29,7 +29,7 @@ class UserResponse(BaseModel):
         from_attributes = True
 
 
-class UserUpdate(BaseModel):
+class UserUpdate(UserSchema):
     """Pydantic model for validating incoming user update data."""
     # Validation of user input during profile update
     old_password: Optional[str] = None
