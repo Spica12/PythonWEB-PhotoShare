@@ -19,6 +19,10 @@ class AuthService:
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
+    async def get_user_by_id(self, user_id: int, db: AsyncSession):
+        user = await UserRepo(db).get_user_by_id(user_id)
+        return user
+
     def get_password_hash(self, password: str):
         return self.pwd_context.hash(password)
 
@@ -43,20 +47,20 @@ class AuthService:
         return user
 
     async def create_access_token(self, data: dict, expires_delta: Optional[float] = None):
-        to_encode = data.copy()
+        to_encode = {"sub": str(user_id)}
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
         else:
-            expire = datetime.utcnow() + timedelta(days=7)
+            expire = datetime.utcnow() + timedelta(minutes=15)
         to_encode.update(
-            {"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"}
+            {"iat": datetime.utcnow(), "exp": expire, "scope": "refresh_token"}
         )
         encode_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
         return encode_jwt
 
     async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
-        to_encode = data.copy()
+        to_encode = {"sub": str(user_id)}
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
         else:
