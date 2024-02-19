@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
-from src.models.users import BlackListModel, TokenModel, UserModel
+from src.models.users import BlackListModel, Roles, TokenModel, UserModel
 from src.schemas.users import UserSchema
 
 
@@ -45,6 +45,7 @@ class UserRepo:
         # Check if users exist
         if not users:
             new_user.confirmed = True
+            new_user.role = Roles.admin
         self.db.add(new_user)
         await self.db.commit()
         await self.db.refresh(new_user)
