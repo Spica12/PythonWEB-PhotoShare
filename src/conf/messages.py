@@ -1,2 +1,6 @@
 ACCOUNT_EXIST = "Account already exist"
 ACCOUNT_NOT_FOUND = "Account not found"
+EMAIL_NOT_CONFIRMED = "Email not confirmed"
+INVALID_USERNAME = "Invalid username"
+INVALID_PASSWORD = "Invalid password"
+ACCOUNT_BLOCKED = "Account blocked"

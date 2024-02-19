@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-
+import uuid
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
 from src.models.users import Roles
@@ -15,12 +15,12 @@ class UserSchema(BaseModel):
 
 class UserResponse(BaseModel):
     """Pydantic model for serializing user data in responses."""
-    id: int = 1
+    id: uuid.UUID
     username: str
     email: EmailStr
     avatar: str | None
     role: Roles
-    picture_count: Optional[int]
+    # picture_count: Optional[int]
     confirmed: bool
     is_active: bool
     created_at: datetime
