@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
+from src.services.cloudinary import CloudinaryService
 
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
@@ -18,7 +19,7 @@ async def show_photos(
 
     All depends will be later
     """
-    pass
+    return {"message": "Hello, this is your FastAPI Cloudinary integration!"}
 
 
 @router_photos.get("/{photo_id}", response_model=None, dependencies=None, status_code=None)
@@ -37,15 +38,19 @@ async def show_photo(
 
 @router_photos.post("/", response_model=None, dependencies=None, status_code=None)
 async def add_photo(
-        operation: str = Query(None),
+        image_url: str,
+        public_id: str,
+        unique_filename: bool = Query(False),
+        overwrite: bool = Query(True),
         db: AsyncSession = Depends(get_db)
 ):
-    """
-    Upload image, send to cloudinary, create url and other
+    try:
+        # Upload an image to Cloudinary
+        cloudinary_service.upload_photo(image_url, public_id, unique_filename, overwrite)
 
-    All depends will be later
-    """
-    pass
+        return {"message": "Image uploaded successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router_photos.delete("/{photo_id}", response_model=None, dependencies=None, status_code=None)
