@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
 from src.services.cloudinary import CloudinaryService
+from src.services.qr import QRCodeService
 
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
@@ -126,3 +127,12 @@ async def delete_comment(
     Check - owner|moderator|admin.
     """
     pass
+
+@router_photos.get("/generate_qr_code/{url}")
+async def generate_qr_code(url: str):
+    qr_code_service = QRCodeService()
+    qr_image = qr_code_service.generate_qr_code(url)
+
+    return StreamingResponse(io.BytesIO(qr_image.make_blob("png")), media_type="image/png")
+
+
