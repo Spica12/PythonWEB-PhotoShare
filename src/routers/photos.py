@@ -133,10 +133,10 @@ def create_image_link(url: str, db: Session = Depends(get_db)):
     qr_code_service = QRCodeService()
 
     # Create a new image link in the database
-    new_image_link = ImageLink(url=url)
-    db.add(new_image_link)
-    db.commit()
-    db.refresh(new_image_link)
+    # new_image_link = ImageLink(url=url)
+    # db.add(new_image_link)
+    # db.commit()
+    # db.refresh(new_image_link)
 
     # Generate QR code
     qr_image = qr_code_service.generate_qr_code(str(new_image_link.id))
