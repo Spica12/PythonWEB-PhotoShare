@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from typing import Optional
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
@@ -7,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.users import UserModel
 from src.conf.config import config
+from src.conf import messages
 from src.dependencies.database import get_db
 from src.repositories.users import UserRepo
 from src.schemas.users import UserSchema
@@ -45,6 +47,42 @@ class AuthService:
     async def get_current_user(self, email: str, db: AsyncSession):
         user = await UserRepo(db).get_user_by_email(email)
         return user
+
+    async def get_current_user(
+        self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+    ):
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=messages.COULD_NOT_VALIDATE_CREDENTIALS,
+            headers={"WWW-AUTHENTICATE": "BEARER"},
+        )
+
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            email = payload["sub"]
+
+            if payload["scope"] == "access_token":
+                if email is None:
+                    raise credentials_exception
+            else:
+                raise credentials_exception
+
+        except JWTError as e:
+            raise credentials_exception
+
+        user_hash = str(email)
+        print(user_hash)
+        user = await UserRepo(db).get_user_by_email(user_hash)
+        if user is None:
+            raise credentials_exception
+
+        return user
+        # to router need add next
+        #
+        # from src.models.users import UserModel
+        # from src.services.auth import auth_service
+        #
+        # user: UserModel = Depends(auth_service.get_current_user)
 
     async def create_access_token(self, email: str, expires_delta: Optional[float] = None):
         to_encode = {"sub": str(email)}
