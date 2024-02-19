@@ -56,8 +56,8 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_PASSWORD
         )
-    access_token = await auth_service.create_access_token(data={"sub": user.username})
-    refresh_token = await auth_service.create_refresh_token(data={"sub": user.username})
+    access_token = await auth_service.create_access_token(user.email)
+    refresh_token = await auth_service.create_refresh_token(user.email)
 
     await auth_service.update_refresh_token(user, refresh_token, db)
 
