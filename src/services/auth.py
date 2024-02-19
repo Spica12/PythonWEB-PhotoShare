@@ -46,21 +46,21 @@ class AuthService:
         user = await UserRepo(db).get_user_by_email(email)
         return user
 
-    async def create_access_token(self, data: dict, expires_delta: Optional[float] = None):
-        to_encode = {"sub": str(user_id)}
+    async def create_access_token(self, email: str, expires_delta: Optional[float] = None):
+        to_encode = {"sub": str(email)}
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
         else:
             expire = datetime.utcnow() + timedelta(minutes=15)
         to_encode.update(
-            {"iat": datetime.utcnow(), "exp": expire, "scope": "refresh_token"}
+            {"iat": datetime.utcnow(), "exp": expire, "scope": "access_token"}
         )
         encode_jwt = jwt.encode(to_encode, self.SECRET_KEY, algorithm=self.ALGORITHM)
 
         return encode_jwt
 
-    async def create_refresh_token(self, data: dict, expires_delta: Optional[float] = None):
-        to_encode = {"sub": str(user_id)}
+    async def create_refresh_token(self, email: str, expires_delta: Optional[float] = None):
+        to_encode = {"sub": str(email)}
         if expires_delta:
             expire = datetime.utcnow() + timedelta(seconds=expires_delta)
         else:
