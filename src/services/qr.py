@@ -1,6 +1,6 @@
 import qrcode
 
-# Функція для генерації QR-коду з URL
+
 def generate_qr_code(url, file_path):
     qr = qrcode.QRCode(
         version=1,

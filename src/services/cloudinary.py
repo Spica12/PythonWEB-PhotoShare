@@ -16,7 +16,7 @@ config = cloudinary.config(secure=True)
 print("****1. Set up and configure the SDK:****\n", config.cloud_name, config.api_key, "\n")
 
 
-def uploadImage():
+def uploadPhoto():
     # Upload the image and get its URL
     # ==============================
 
@@ -52,7 +52,7 @@ def getAssetInfo():
     print("New tag: ", update_resp["tags"], "\n")
 
 
-def createImageTag():
+def createPhotoTag():
     # Transform the image
     # ==============================
 
@@ -64,9 +64,9 @@ def createImageTag():
 
 
 def main():
-    uploadImage()
+    uploadPhoto()
     getAssetInfo()
-    createImageTag()
+    createPhotoTag()
 
 
 main();
