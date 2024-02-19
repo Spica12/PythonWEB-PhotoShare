@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
-from src.models.users import TokenModel, UserModel
+from src.models.users import BlackListModel, TokenModel, UserModel
 from src.schemas.users import UserSchema
 
 
@@ -52,4 +52,9 @@ class UserRepo:
         else:
             new_token = TokenModel(token=refresh_token, user_id=user.id)
             self.db.add(new_token)
+        await self.db.commit()
+
+    async def add_token_to_blacklist(self, token: str):
+        new_token = BlackListModel(token=token)
+        self.db.add(new_token)
         await self.db.commit()

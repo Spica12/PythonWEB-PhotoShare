@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, Security, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
+from models.users import UserModel
 
 from src.dependencies.database import get_db
 
@@ -11,10 +12,10 @@ from src.conf import messages
 router_auth = APIRouter(prefix="/auth", tags=["Auth"])
 
 
-@router_auth.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(
-    body: UserSchema,
-    db: AsyncSession = Depends(get_db)):
+@router_auth.post(
+    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+)
+async def register(body: UserSchema, db: AsyncSession = Depends(get_db)):
     # need response model and body schema
     exist_user = await auth_service.get_user_by_email(body.email, db=db)
     if exist_user:
@@ -39,6 +40,11 @@ async def login(
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_USERNAME
+        )
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=messages.ACCOUNT_BLOCKED,
         )
     if not user.confirmed:
         raise HTTPException(

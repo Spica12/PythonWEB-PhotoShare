@@ -27,7 +27,7 @@ class AuthService:
 
     async def create_user(self, body: UserSchema, db: AsyncSession):
         new_user = await UserRepo(db).create_user(body)
-        
+
         return new_user
 
     async def get_user_by_username(self, username: str, db: AsyncSession):
@@ -70,6 +70,9 @@ class AuthService:
 
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None, db: AsyncSession):
         await UserRepo(db).update_refresh_token(user, refresh_token)
+
+    async def add_token_to_blacklist(self, user: UserModel, token: str, db: AsyncSession):
+        await UserRepo(db).add_token_to_blacklist(token)
 
 
 auth_service = AuthService()
