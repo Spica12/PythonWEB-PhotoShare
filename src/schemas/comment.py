@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import BaseModel, Field
 
@@ -8,10 +9,10 @@ class CommentSchema(BaseModel):
     content: str = Field(min_length=3, max_length=255)
 
 
-class CommentResponse(CommentSchema):
+class CommentResponseShort(CommentSchema):
     """Pydantic model for serializing comment data in responses."""
     id: int
-    user_id: int
+    user_id: UUID
     photo_id: int
     created_at: datetime
     updated_at: datetime
