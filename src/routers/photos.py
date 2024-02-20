@@ -1,9 +1,12 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.models.users import UserModel
 from src.services.auth import auth_service
 
 from src.dependencies.database import get_db
+from src.schemas import comment
+from src.services.comments import comment_service
+from src.conf import messages
 from src.services.cloudinary import CloudinaryService
 from src.services.qr import QRCodeService
 
@@ -85,26 +88,73 @@ async def update_photo(
     """
     pass
 
+
+# ================================================================================================================
 # comments section
+# ================================================================================================================
 
 
-@router_photos.post("/{photo_id}/comment", response_model=None, dependencies=None, status_code=None)
+@router_photos.get("/{photo_id}/comments",
+                   response_model=list[comment.CommentResponseShort],
+                   dependencies=None,
+                   status_code=status.HTTP_200_OK
+                   )
+async def show_comments(
+        photo_id: int = Path(ge=1),
+        limit: int = Query(10, ge=10, le=100),
+        skip: int = Query(0, ge=0),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    Show all comments for specified image.
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    result = await comment_service.get_all_comments(photo_id=photo_id, skip=skip, limit=limit, db=db)
+    return result
+
+
+@router_photos.post("/{photo_id}/comments",
+                    response_model=comment.CommentResponseShort,
+                    dependencies=None,
+                    status_code=status.HTTP_201_CREATED
+                    )
 async def add_comment(
+        body: comment.CommentSchema,
         photo_id: int,
         db: AsyncSession = Depends(get_db)
 ):
+    # TODO add depends for user
     """
     Add comment to current image
-
-    All depends will be later
+    All depends of user will be later
     """
-    pass
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    # if photo object in database - we can add comment
+    # Todo replace user_id with current user
+    result = await comment_service.add_comment(photo_id=photo_id, comment=body.content, user_id=1, db=db)
+    return result
 
 
-@router_photos.put("/{photo_id}/comment/{comment_id}", response_model=None, dependencies=None, status_code=None)
+
+@router_photos.put("/{photo_id}/comment/{comment_id}",
+                   response_model=None,
+                   dependencies=None,
+                   status_code=None
+                   )
 async def edit_comment(
-        photo_id: int,
-        comment_id: int,
+        body: comment.CommentSchema,
+        photo_id: int = Path(ge=1),
+        comment_id: int = Path(ge=1),
         db: AsyncSession = Depends(get_db)
 ):
     """
@@ -114,22 +164,74 @@ async def edit_comment(
 
     Check - owner|moderator|admin.
     """
-    pass
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    # check if comment exists to perform operations on it
+    exists_comment = await comment_service.check_exist_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+    if not exists_comment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
+        )
+
+    # Todo check admin/moderator role
+    # check if comment owner or admin/moderator role
+    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id="0a9c1d93-87dc-4511-8536-52d282218789", db=db)
+    if not edit_permissions:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
+        )
+
+    result = await comment_service.edit_comment(photo_id=photo_id, comment_id=comment_id, comment=body.content, db=db)
+    return result
 
 
-@router_photos.delete("/{photo_id}/comment/{comment_id}", response_model=None, dependencies=None, status_code=None)
+@router_photos.delete("/{photo_id}/comment/{comment_id}",
+                      response_model=None,
+                      dependencies=None,
+                      status_code=status.HTTP_204_NO_CONTENT
+                      )
 async def delete_comment(
-        photo_id: int,
-        comment_id: int,
+        photo_id: int = Path(ge=1),
+        comment_id: int = Path(ge=1),
         db: AsyncSession = Depends(get_db)
 ):
     """
-    Delete comment by id or another reference ???
+    Delete comment by id
 
     All depends will be later
-
     Check - owner|moderator|admin.
     """
+
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    # check if comment exists to perform operations on it
+    exists_comment = await comment_service.check_exist_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+    if not exists_comment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
+        )
+
+    # Todo check admin/moderator role
+    # check if comment owner or admin/moderator role
+    user_id = "0a9c1d93-87dc-4511-8536-52d282218789" # test UUID, del after add users depends
+    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=user_id, db=db)
+    if not edit_permissions:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
+        )
+    result = await comment_service.delete_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+
+    return result
     pass
 
 # @router.post("/create_image_link/")

@@ -5,3 +5,8 @@ INVALID_USERNAME = "Invalid username"
 INVALID_PASSWORD = "Invalid password"
 ACCOUNT_BLOCKED = "Account blocked"
 COULD_NOT_VALIDATE_CREDENTIALS = "Could not validate credentials"
+
+PHOTO_NOT_FOUND = "Photo not found"
+COMMENT_NOT_FOUND = "Comment not found"
+NO_EDIT_RIGHTS = "Not enough rights"
+
