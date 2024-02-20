@@ -1,5 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.photos import PhotoModel
+from src.models.users import UserModel
 from src.repositories.photos import PhotoRepo
 
 
@@ -15,3 +17,8 @@ class PhotoService:
         :return: Nothing
         """
         self.repo = PhotoRepo(db=db)
+
+    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
+        new_photo = await self.repo.add_photo(user, photo_url, description)
+
+        return new_photo

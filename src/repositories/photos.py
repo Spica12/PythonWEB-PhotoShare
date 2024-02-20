@@ -2,6 +2,9 @@ from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.models.photos import PhotoModel
+from src.models.users import UserModel
+
 
 class PhotoRepo:
 
@@ -15,3 +18,15 @@ class PhotoRepo:
         :return: Nothing
         """
         self.db: AsyncSession = db
+
+    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
+        new_photo = PhotoModel(
+            image_url=photo_url,
+            user_id=user.id,
+            description=description
+        )
+        self.db.add(new_photo)
+        await self.db.commit()
+        await self.db.refresh(new_photo)
+
+        return new_photo

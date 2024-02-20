@@ -1,9 +1,13 @@
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
 import json
 
+import cloudinary
+import cloudinary.api
+import cloudinary.uploader
+from fastapi import UploadFile
+
 from src.conf.config import config
+from src.models.users import UserModel
+
 
 class CloudinaryService:
 
@@ -16,8 +20,15 @@ class CloudinaryService:
             secure=True
         )
 
-    def upload_photo(self, image_url, public_id, unique_filename=False, overwrite=True):
-        cloudinary.uploader.upload(image_url, public_id=public_id, unique_filename=unique_filename, overwrite=overwrite)
+    def upload_photo(self, file: UploadFile, user: UserModel):
+        folder = f"photoshare/{user.username}"
+        result = cloudinary.uploader.upload(
+            file.file, folder=folder, overwrite=True
+        )
+        public_id = result["public_id"]
+        result_url = cloudinary.CloudinaryImage(public_id).build_url(version=result.get("version"))
+
+        return result_url
 
     def get_asset_info(self, public_id):
         image_info = cloudinary.api.resource(public_id)

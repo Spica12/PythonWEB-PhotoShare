@@ -1,13 +1,16 @@
-from fastapi import APIRouter, Depends, Query, HTTPException, Path, status
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, Path,
+                     Query, UploadFile, status)
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.models.users import UserModel
-from src.services.auth import auth_service
 
-from src.dependencies.database import get_db
-from src.schemas import comment
-from src.services.comments import comment_service
 from src.conf import messages
+from src.dependencies.database import get_db
+from src.models.users import UserModel
+from src.schemas import comment
+from src.schemas.photos import ImageResponseAfterCreateSchema
+from src.services.auth import auth_service
 from src.services.cloudinary import CloudinaryService
+from src.services.comments import comment_service
+from src.services.photos import PhotoService
 from src.services.qr import QRCodeService
 
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
@@ -42,23 +45,41 @@ async def show_photo(
     """
     pass
 
-
-@router_photos.post("/", response_model=None, dependencies=None, status_code=None)
-async def add_photo(
-        image_url: str,
-        public_id: str,
-        unique_filename: bool = Query(False),
-        overwrite: bool = Query(True),
-        db: AsyncSession = Depends(get_db)
-):
+    # @router_photos.post("/", response_model=None, dependencies=None, status_code=None)
+    # async def add_photo(
+    #         image_url: str,
+    #         public_id: str,
+    #         unique_filename: bool = Query(False),
+    #         overwrite: bool = Query(True),
+    #         db: AsyncSession = Depends(get_db)
+    # ):
     # try:
-        # Upload an image to Cloudinary
+    # Upload an image to Cloudinary
     #     cloudinary_service.upload_photo(image_url, public_id, unique_filename, overwrite)
 
     #     return {"message": "Image uploaded successfully!"}
     # except Exception as e:
     #     raise HTTPException(status_code=500, detail=str(e))
     ...
+
+
+@router_photos.post(
+    "/",
+    response_model=ImageResponseAfterCreateSchema,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def upload_photo(
+    file: UploadFile = File(),
+    description: str | None = Form(...),
+    user: UserModel = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    # Upload photo and get url
+    photo_cloud_url = CloudinaryService().upload_photo(file, user)
+    photo = await PhotoService(db).add_photo(user, photo_cloud_url, description)
+
+    return photo
 
 
 @router_photos.delete("/{photo_id}", response_model=None, dependencies=None, status_code=None)
@@ -143,7 +164,6 @@ async def add_comment(
     # Todo replace user_id with current user
     result = await comment_service.add_comment(photo_id=photo_id, comment=body.content, user_id=1, db=db)
     return result
-
 
 
 @router_photos.put("/{photo_id}/comment/{comment_id}",
