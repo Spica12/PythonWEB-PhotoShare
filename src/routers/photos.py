@@ -71,7 +71,7 @@ async def show_photo(
 )
 async def upload_photo(
     file: UploadFile = File(),
-    description: str | None = Form(...),
+    description: str | None = Form('', description="Add description to your photo"),
     user: UserModel = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
