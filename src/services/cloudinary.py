@@ -3,13 +3,16 @@ import cloudinary.uploader
 import cloudinary.api
 import json
 
+from src.conf.config import config
+
 class CloudinaryService:
-    
-    def __init__(self, cloud_name, api_key, api_secret):
+
+    def __init__(self):
         cloudinary.config(
-            cloud_name=cloud_name,
-            api_key=api_key,
-            api_secret=api_secret,
+            cloud_name=config.CLOUDINARY_NAME,
+            api_key=config.CLOUDINARY_API_KEY,
+            api_secret=config.CLOUDINARY_API_SECRET,
+            # Use HTTPS with TLS encryption
             secure=True
         )
 

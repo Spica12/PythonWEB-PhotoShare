@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     CLOUDINARY_NAME: str = "abc"
     CLOUDINARY_API_KEY: int = 000000000000000
     CLOUDINARY_API_SECRET: str = "secret"
+    CLOUDINARY_URL = "cloudinary://my_key:my_secret@my_cloud_name"
 
     BASE_DIR: Path = Path(__file__).parent.parent.parent
 
