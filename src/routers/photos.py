@@ -15,8 +15,17 @@ from src.services.qr import QRCodeService
 
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
+# ================================================================================================================
+# photos section
+# ================================================================================================================
 
-@router_photos.get("/", response_model=None, dependencies=None, status_code=None)
+
+@router_photos.get(
+    "/",
+    response_model=list[ImageResponseAfterCreateSchema],
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
 async def show_photos(
         limit: int = Query(10, ge=10, le=100),
         skip: int = Query(0, ge=0),
@@ -25,11 +34,10 @@ async def show_photos(
 ):
     """
     Show all images with query parameters.
-
-
-    All depends will be later
     """
-    return {"message": "Hello, this is your FastAPI Cloudinary integration!"}
+    photos = await PhotoService(db).get_all_photos(user, skip, limit)
+
+    return photos
 
 
 @router_photos.get("/{photo_id}", response_model=None, dependencies=None, status_code=None)
@@ -44,23 +52,6 @@ async def show_photo(
 
     """
     pass
-
-    # @router_photos.post("/", response_model=None, dependencies=None, status_code=None)
-    # async def add_photo(
-    #         image_url: str,
-    #         public_id: str,
-    #         unique_filename: bool = Query(False),
-    #         overwrite: bool = Query(True),
-    #         db: AsyncSession = Depends(get_db)
-    # ):
-    # try:
-    # Upload an image to Cloudinary
-    #     cloudinary_service.upload_photo(image_url, public_id, unique_filename, overwrite)
-
-    #     return {"message": "Image uploaded successfully!"}
-    # except Exception as e:
-    #     raise HTTPException(status_code=500, detail=str(e))
-    ...
 
 
 @router_photos.post(

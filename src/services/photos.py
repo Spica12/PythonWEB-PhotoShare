@@ -22,3 +22,8 @@ class PhotoService:
         new_photo = await self.repo.add_photo(user, photo_url, description)
 
         return new_photo
+
+    async def get_all_photos(self, user: UserModel, skip: int, limit: int) -> list[PhotoModel]:
+        photos = await self.repo.get_all_photos(user, skip, limit)
+
+        return photos
