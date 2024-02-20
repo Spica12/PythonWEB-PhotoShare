@@ -4,6 +4,7 @@ import cloudinary.api
 import json
 
 class CloudinaryService:
+    
     def __init__(self, cloud_name, api_key, api_secret):
         cloudinary.config(
             cloud_name=cloud_name,
@@ -55,5 +56,3 @@ def main():
         'effect': 'sepia'
     }
     cloudinary_service.create_photo_tag("quickstart_butterfly", transformations)
-
-
