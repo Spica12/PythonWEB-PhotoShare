@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.users import UserModel
+from src.models.BlacklistTokenModel import BlacklistTokenModel
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
@@ -111,8 +112,12 @@ class AuthService:
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None, db: AsyncSession):
         await UserRepo(db).update_refresh_token(user, refresh_token)
 
-    async def add_token_to_blacklist(self, user: UserModel, token: str, db: AsyncSession):
-        await UserRepo(db).add_token_to_blacklist(token)
+    async def add_token_to_blacklist(self, token: str, db: AsyncSession):
+        async with db() as session:
+            blacklist_token = BlacklistTokenModel(token=token)
+            session.add(blacklist_token)
+            await session.commit()
+
 
 
 auth_service = AuthService()
