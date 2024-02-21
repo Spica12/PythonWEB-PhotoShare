@@ -6,14 +6,15 @@ from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
 from src.models.users import UserModel
 from src.services.auth import AuthService
+from src.repositories.users import UserRepo
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router_users.get("/my_profile", response_model=UserResponse)
 async def get_current_user(
-    user: UserModel = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db),
 ):
     """
     Endpoint to retrieve the information of the currently authenticated user.
@@ -27,10 +28,10 @@ async def get_current_user(
 
 @router_users.get("/{username}", response_model=UserResponse)
 async def get_user(
-    username: str,
-    db: AsyncSession = Depends(get_db),
-    auth_service: AuthService = Depends(),
-    user: UserModel = Depends(auth_service.get_current_user),
+        username: str,
+        db: AsyncSession = Depends(get_db),
+        auth_service: AuthService = Depends(),
+        user: UserModel = Depends(auth_service.get_current_user),
 ):
     """
     Endpoint to retrieve the profile information of a specific user by username.
@@ -41,6 +42,22 @@ async def get_user(
             status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
         )
     return user_info
+
+
+@router_users.put("/my_profile", response_model=UserResponse)
+async def update_current_user(user_update: UserUpdate,
+                              user: UserModel = Depends(auth_service.get_current_user),
+                              db: AsyncSession = Depends(get_db),
+                              ):
+    """
+    Update profile of current user. Depends will be later.
+
+    All depends will be later
+
+    Need model with all fields excluded is_active, role
+    """
+    updated_user = await UserRepo(db).update_user(user, user_update)
+    return updated_user
 
 
 @router_users.put(
@@ -57,18 +74,3 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     """
     pass
 
-
-
-
-@router_users.put(
-    "/my_profile", response_model=None, dependencies=None, status_code=None
-)
-async def update_current_user():
-    """
-    Show profile of current user. Depends will be later.
-
-    All depends will be later
-
-    Need model with all fields excluded is_active, role
-    """
-    pass

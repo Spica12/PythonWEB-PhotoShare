@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
-from src.schemas.users import UserSchema
+from src.schemas.users import UserSchema, UserUpdate
+from src.services import auth
 
 
 class UserRepo:
@@ -67,3 +68,19 @@ class UserRepo:
         new_token = BlackListModel(token=token)
         self.db.add(new_token)
         await self.db.commit()
+
+    async def update_user(self, email: str, user_update: UserUpdate):
+        user = await self.get_user_by_email(email)
+
+        if user:
+            for field, value in user_update.__dict__.items():
+                if field == 'password':
+                    setattr(user, field, auth.auth_service.get_password_hash(value))
+                elif field != 'email':
+                    setattr(user, field, value)
+
+            await self.db.commit()
+            await self.db.refresh(user)
+            return user
+        else:
+            return None
