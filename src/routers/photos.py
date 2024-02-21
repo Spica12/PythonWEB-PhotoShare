@@ -8,6 +8,7 @@ from src.dependencies.database import get_db
 
 # models
 from src.models.users import UserModel
+from src.models.users import Roles
 
 # schemas
 from src.schemas import comment
@@ -18,8 +19,10 @@ from src.services.auth import auth_service
 from src.services.cloudinary import CloudinaryService
 from src.services.photos import PhotoService
 from src.services.comments import CommentService
+from src.services.roles import RoleChecker
 from src.services.qr import QRCodeService
 
+# routers
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
 # ================================================================================================================
@@ -204,34 +207,32 @@ async def edit_comment(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
         )
 
-    # Todo check admin/moderator role
-    # check if comment owner or admin/moderator role
-    edit_permissions = await CommentService(db).check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id)
-    if not edit_permissions:
+    # check owner and moderator|admin
+    comment_owner = await CommentService(db).check_comment_owner(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id)
+    admin_moderator_check = await RoleChecker([Roles.admin, Roles.moderator]).check_admin_or_moderator(user_id=current_user.id, db=db)
+    if not comment_owner and admin_moderator_check is None:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
         )
 
+    # perform operation on comment if all checks are passe successfully
     result = await CommentService(db).edit_comment(photo_id=photo_id, comment_id=comment_id, comment=body.content)
     return result
 
 
 @router_photos.delete("/{photo_id}/comment/{comment_id}",
                       response_model=None,
-                      dependencies=None,
+                      dependencies=[Depends(RoleChecker([Roles.admin]))],
                       status_code=status.HTTP_204_NO_CONTENT
                       )
 async def delete_comment(
         photo_id: int = Path(ge=1),
         comment_id: int = Path(ge=1),
-        db: AsyncSession = Depends(get_db),
-        current_user: UserModel = Depends(auth_service.get_current_user)
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Delete comment by id
-
-    All depends will be later
-    Check - owner|moderator|admin.
+    Route can be access only for admin (or moderator ?)
     """
 
     # check if we have photo object in database to perform operations with comments
@@ -248,17 +249,8 @@ async def delete_comment(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
         )
 
-    # Todo check admin/moderator role
-    # check if comment owner or admin/moderator role
-    edit_permissions = await CommentService(db).check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id)
-    if not edit_permissions:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
-        )
     result = await CommentService(db).delete_comment(photo_id=photo_id, comment_id=comment_id)
-
     return result
-    pass
 
 # @router.post("/create_image_link/")
 # def create_image_link(url: str, db: Session = Depends(get_db)):

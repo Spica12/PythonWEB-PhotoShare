@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from src.models.users import UserModel
 from src.conf.config import config
@@ -21,7 +22,7 @@ class AuthService:
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-    async def get_user_by_id(self, user_id: int, db: AsyncSession):
+    async def get_user_by_id(self, user_id: UUID, db: AsyncSession):
         user = await UserRepo(db).get_user_by_id(user_id)
         return user
 
