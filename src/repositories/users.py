@@ -67,3 +67,9 @@ class UserRepo:
         new_token = BlackListModel(token=token)
         self.db.add(new_token)
         await self.db.commit()
+
+
+    async def confirmed_email(email: str, db: AsyncSession) -> None:
+        user = await get_user_by_email(email, db)
+        user.confirmed = True
+        await db.commit()
