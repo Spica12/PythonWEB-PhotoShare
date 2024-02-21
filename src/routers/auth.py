@@ -93,16 +93,16 @@ async def logout():
 #     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
-@router_auth.get("/email/{token}")
+@router_auth.get("/confirmed_email/{token}")
 async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
     email = await auth_service.get_email_from_token(token)
     user = await auth_service.get_user_by_email(email, db)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=messages.VERIFICATION_ERROR)
     if user.confirmed:
-        return {"message": "Your email is already confirmed"}
-    await auth_service.confirmed_email(email, db)
-    return {"message": "Email confirmed"}
+        return {"message": messages.EMAIL_ALREADY_CONFIRMED}
+    await auth_service.confirmed_email(user, db)
+    return {"message": messages.EMAIL_CONFIRMED}
 
 
 # @router_auth.post('/request_email')

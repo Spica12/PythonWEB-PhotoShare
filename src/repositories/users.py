@@ -69,7 +69,6 @@ class UserRepo:
         await self.db.commit()
 
 
-    async def confirmed_email(self, email: str, db: AsyncSession) -> None:
-        user = await self.get_user_by_email(email, db)
+    async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True
-        await db.commit()
+        await self.db.commit()

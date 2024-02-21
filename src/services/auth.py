@@ -131,7 +131,10 @@ class AuthService:
         except JWTError as e:
             print(e)
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                                detail="Invalid token for email verification")
+                                detail=messages.INVALID_EMAIL_TOKEN)
+
+    async def confirmed_email(self, user: UserModel, db: AsyncSession):
+        await UserRepo(db).confirmed_email(user)
 
 
 auth_service = AuthService()
