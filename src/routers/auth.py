@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm, HTTPBearer
 from src.models.users import UserModel
 
 from src.dependencies.database import get_db
@@ -11,6 +11,7 @@ from src.conf import messages
 from src.repositories.users import UserRepo
 
 router_auth = APIRouter(prefix="/auth", tags=["Auth"])
+get_refresh_token = HTTPBearer()
 
 
 @router_auth.post(
@@ -74,24 +75,31 @@ async def logout():
     pass
 
 
-@router_auth.get("/refresh", response_model="")
-async def refresh_token(credentials, db: AsyncSession = Depends(get_db)):
-    """
-    Refresh token
-    """
-    # need response model, credentials
-    pass
+@router_auth.get("/refresh", response_model=TokenSchema)
+async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
+                        db: AsyncSession = Depends(get_db)):
+    token = credentials.credentials
+    email = await auth_service.decode_refresh_token(token)
+    user = await auth_service.get_user_by_email(email, db)
+    if user.refresh_token != token:
+        await auth_service.update_refresh_token(user, None, db)
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+
+    access_token = await auth_service.create_access_token(data={"sub": email})
+    refresh_token = await auth_service.create_refresh_token(data={"sub": email})
+    await repositories_users.update_refresh_token(user, refresh_token, db)
+    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router_auth.get("/email/{token}")
 async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
     email = await auth_service.get_email_from_token(token)
-    user = await repositories_users.get_user_by_email(email, db)
+    user = await auth_service.get_user_by_email(email, db)
     if user is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Verification error")
     if user.confirmed:
         return {"message": "Your email is already confirmed"}
-    await repositories_users.confirmed_email(email, db)
+    await auth_service.confirmed_email(email, db)
     return {"message": "Email confirmed"}
 
 
@@ -103,5 +111,5 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
     if user.confirmed:
         return {"message": "Your email is already confirmed"}
     if user:
-        background_tasks.add_task(send_email, user.email, user.username, str(request.base_url))
+        background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
     return {"message": "Check your email for confirmation."}
