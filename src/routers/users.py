@@ -60,10 +60,11 @@ async def update_current_user(user_update: UserUpdate,
     return updated_user
 
 
-@router_users.put(
-    "/{username}", response_model=None, dependencies=None, status_code=None
-)
-async def update_user(db: AsyncSession = Depends(get_db)):
+@router_users.put("/{username}", response_model=None, dependencies=None, status_code=None)
+async def update_user(username: str,
+                      current_user: User = Depends(auth_service.get_current_user),
+                      db: AsyncSession = Depends(get_db),
+                      ):
     """
     Method put for username only if admin. Depends will be later.
 
@@ -72,5 +73,11 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    pass
+    if not current_user.role == Role.admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You don't have permission to perform this action.",
+        )
 
+    await repositories_users.ban_user(username, db)
+    return {"message": f"{username} has been banned."}
