@@ -12,8 +12,7 @@ class CommentService:
         result = await self.repo.get_comment(photo_id, comment_id)
         return result
 
-    async def check_permissions(self, photo_id: int, comment_id: int, user_id: UUID):
-        # ToDO add moderator and admin check
+    async def check_comment_owner(self, photo_id: int, comment_id: int, user_id: UUID):
         result = await self.repo.get_comment(photo_id, comment_id)
         if result.user_id != user_id:
             return None
