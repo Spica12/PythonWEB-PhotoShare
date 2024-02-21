@@ -113,8 +113,16 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
-    public_id = CloudinaryService(db).get_public_id()
-    pass
+    result = CloudinaryService().destroy_photo(public_id=photo.public_id)
+
+    if result['result'] == 'ok':
+        await PhotoService(db).delete_photo(photo)
+    elif result['result'] == 'not found':
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    return result
 
 
 @router_photos.put("/{photo_id}", response_model=None, dependencies=None, status_code=None)

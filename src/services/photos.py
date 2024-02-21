@@ -22,3 +22,6 @@ class PhotoService:
         photos = await self.repo.get_all_photos(skip, limit)
 
         return photos
+
+    async def delete_photo(self, photo: PhotoModel):
+        await self.repo.delete_photo(photo)

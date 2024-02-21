@@ -39,3 +39,7 @@ class PhotoRepo:
         stmt = select(PhotoModel).filter_by(id=photo_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def delete_photo(self, photo: PhotoModel):
+        await self.db.delete(photo)
+        await self.db.commit()
