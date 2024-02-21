@@ -9,8 +9,8 @@ class PhotoService:
     def __init__(self, db: AsyncSession):
         self.repo = PhotoRepo(db=db)
 
-    async def get_photo_exists(self, photo_id: int, db: AsyncSession):
-        result = await PhotoRepo(db).get_photo_from_db(photo_id)
+    async def get_photo_exists(self, photo_id: int):
+        result = await self.repo.get_photo_from_db(photo_id)
         return result
 
     async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
@@ -18,10 +18,7 @@ class PhotoService:
 
         return new_photo
 
-    async def get_all_photos(self, user: UserModel, skip: int, limit: int) -> list[PhotoModel]:
-        photos = await self.repo.get_all_photos(user, skip, limit)
+    async def get_all_photos(self, skip: int, limit: int) -> list[PhotoModel]:
+        photos = await self.repo.get_all_photos(skip, limit)
 
         return photos
-
-photo_service = PhotoService()
-
