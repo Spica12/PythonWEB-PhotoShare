@@ -7,6 +7,7 @@ from src.dependencies.database import get_db
 
 from src.schemas.users import UserSchema, UserResponse, TokenSchema, RequestEmail
 from src.services.auth import auth_service
+from src.services.email import EmailService
 from src.conf import messages
 from src.repositories.users import UserRepo
 
@@ -27,8 +28,9 @@ async def register(body: UserSchema, request: Request, bt: BackgroundTasks, db: 
 
     body.password = auth_service.get_password_hash(body.password)
     new_user = await auth_service.create_user(body, db)
+
     bt.add_task(
-        email_service, new_user.email, new_user.username, str(request.base_url)
+        EmailService().send_varification_mail, new_user.email, new_user.username, str(request.base_url)
     )
     return new_user
 
@@ -75,20 +77,20 @@ async def logout():
     pass
 
 
-@router_auth.get("/refresh", response_model=TokenSchema)
-async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
-                        db: AsyncSession = Depends(get_db)):
-    token = credentials.credentials
-    email = await auth_service.decode_refresh_token(token)
-    user = await auth_service.get_user_by_email(email, db)
-    if user.refresh_token != token:
-        await auth_service.update_refresh_token(user, None, db)
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+# @router_auth.get("/refresh", response_model=TokenSchema)
+# async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
+#                         db: AsyncSession = Depends(get_db)):
+#     token = credentials.credentials
+#     email = await auth_service.decode_refresh_token(token)
+#     user = await auth_service.get_user_by_email(email, db)
+#     if user.refresh_token != token:
+#         await auth_service.update_refresh_token(user, None, db)
+#         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
-    access_token = await auth_service.create_access_token(data={"sub": email})
-    refresh_token = await auth_service.create_refresh_token(data={"sub": email})
-    await repositories_users.update_refresh_token(user, refresh_token, db)
-    return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
+#     access_token = await auth_service.create_access_token(data={"sub": email})
+#     refresh_token = await auth_service.create_refresh_token(data={"sub": email})
+#     await repositories_users.update_refresh_token(user, refresh_token, db)
+#     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
 
 
 @router_auth.get("/email/{token}")
@@ -103,13 +105,13 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
     return {"message": "Email confirmed"}
 
 
-@router_auth.post('/request_email')
-async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
-                        db: AsyncSession = Depends(get_db)):
-    user = await auth_service.get_user_by_email(body.email, db)
+# @router_auth.post('/request_email')
+# async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
+#                         db: AsyncSession = Depends(get_db)):
+#     user = await auth_service.get_user_by_email(body.email, db)
 
-    if user.confirmed:
-        return {"message": "Your email is already confirmed"}
-    if user:
-        background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
-    return {"message": "Check your email for confirmation."}
+#     if user.confirmed:
+#         return {"message": "Your email is already confirmed"}
+#     if user:
+#         background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
+#     return {"message": "Check your email for confirmation."}
