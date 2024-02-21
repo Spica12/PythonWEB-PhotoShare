@@ -16,7 +16,7 @@ class RatingRepo:
         await self.db.refresh(new_rate)
         return new_rate
 
-    async def get_single_rates(self, photo_id: int, user_id: UUID):
+    async def get_single_rate(self, photo_id: int, user_id: UUID):
         # to check if user already set a rate
         stmt = select(RatingModel).filter(
             and_(RatingModel.photo_id == photo_id, RatingModel.user_id == user_id)
@@ -24,13 +24,13 @@ class RatingRepo:
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_rates(self, photo_id: int):
-        # to calculate rating
+    async def get_avg_rate(self, photo_id: int):
+        # to calculate average rating
         stmt = select(func.avg(RatingModel)).filter(RatingModel.photo_id == photo_id)
         result = await self.db.execute(stmt)
         return result
 
-    async def del_single_rate(self, photo_id: int, user_id: UUID):
+    async def delete_single_rate(self, photo_id: int, user_id: UUID):
         stmt = select(RatingModel).filter(
             and_(RatingModel.photo_id == photo_id, RatingModel.user_id == user_id)
         )
