@@ -4,9 +4,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.dependencies.database import get_db
 from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
-from src.models.users import UserModel
+from src.models.users import UserModel, Roles
 from src.services.auth import AuthService
 from src.repositories.users import UserRepo
+from src.repositories import users as repositories_users
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
 
@@ -56,13 +57,14 @@ async def update_current_user(user_update: UserUpdate,
 
     Need model with all fields excluded is_active, role
     """
-    updated_user = await UserRepo(db).update_user(user, user_update)
+    updated_user = await repositories_users.update_user(user.email, user_update, db)
+
     return updated_user
 
 
 @router_users.put("/{username}", response_model=None, dependencies=None, status_code=None)
 async def update_user(username: str,
-                      current_user: User = Depends(auth_service.get_current_user),
+                      current_user: UserModel = Depends(auth_service.get_current_user),
                       db: AsyncSession = Depends(get_db),
                       ):
     """
@@ -73,7 +75,7 @@ async def update_user(username: str,
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    if not current_user.role == Role.admin:
+    if not current_user.role == Roles.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You don't have permission to perform this action.",

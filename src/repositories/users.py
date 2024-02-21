@@ -69,18 +69,33 @@ class UserRepo:
         self.db.add(new_token)
         await self.db.commit()
 
-    async def update_user(self, email: str, user_update: UserUpdate):
-        user = await self.get_user_by_email(email)
 
-        if user:
-            for field, value in user_update.__dict__.items():
-                if field == 'password':
-                    setattr(user, field, auth.auth_service.get_password_hash(value))
-                elif field != 'email':
-                    setattr(user, field, value)
+async def update_user(email: str, user_update: UserUpdate, db: AsyncSession):
+    stmt = select(UserModel).filter_by(email=email)
+    user = await db.execute(stmt)
+    user = user.unique().scalar_one_or_none()
 
-            await self.db.commit()
-            await self.db.refresh(user)
-            return user
-        else:
-            return None
+    if user:
+        for field, value in user_update.__dict__.items():
+            if field == 'password':
+                setattr(user, field, auth.auth_service.get_password_hash(value))
+            else:
+                setattr(user, field, value)
+
+        await db.commit()
+        await db.refresh(user)
+        return user
+    else:
+        return None
+
+
+async def ban_user(username: str, db: AsyncSession):
+    stmt = select(UserModel).filter_by(username=username)
+    user = await db.execute(stmt)
+    user = user.unique().scalar_one_or_none()
+    if user:
+        user.ban = True
+        await db.commit()
+        return True
+    else:
+        return False
