@@ -1,7 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.photos import CommentModel, PhotoModel
+from src.models.photos import PhotoModel
 from src.models.users import UserModel
 
 
@@ -28,6 +28,7 @@ class PhotoRepo:
         stmt = select(PhotoModel).filter_by(user_id=user.id).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
 
+        # check here. Pycharm:  Expected type 'list[PhotoModel]', got 'Sequence[PhotoModel]' instead
         return result.scalars().all()
 
     # to check if the object exists or get one photo by id

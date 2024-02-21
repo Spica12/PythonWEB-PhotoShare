@@ -2,20 +2,22 @@ from fastapi import (APIRouter, Depends, File, Form, HTTPException, Path,
                      Query, UploadFile, status)
 from sqlalchemy.ext.asyncio import AsyncSession
 
+# config
 from src.conf import messages
 from src.dependencies.database import get_db
+
+# models
 from src.models.users import UserModel
+
+# schemas
 from src.schemas import comment
-
 from src.schemas.photos import ImageResponseAfterCreateSchema
+
+# services
 from src.services.auth import auth_service
-
-from src.services.comments import comment_service
-from src.services.photos import photo_service
-from src.conf import messages
-
 from src.services.cloudinary import CloudinaryService
 from src.services.photos import PhotoService
+from src.services.comments import CommentService
 from src.services.qr import QRCodeService
 
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
@@ -61,7 +63,7 @@ async def show_photo(
     pass
 
 
-  @router_photos.post(
+@router_photos.post(
     "/",
     response_model=ImageResponseAfterCreateSchema,
     dependencies=None,
@@ -135,12 +137,12 @@ async def show_comments(
     Show for all users, unregistered too
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
-    result = await comment_service.get_all_comments(photo_id=photo_id, skip=skip, limit=limit, db=db)
+    result = await CommentService(db).get_all_comments(photo_id=photo_id, skip=skip, limit=limit)
     return result
 
 
@@ -160,13 +162,13 @@ async def add_comment(
     Only for registered users
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
     # if photo object in database - we can add comment
-    result = await comment_service.add_comment(photo_id=photo_id, comment=body.content, user_id=current_user.id, db=db)
+    result = await CommentService(db).add_comment(photo_id=photo_id, comment=body.content, user_id=current_user.id)
     return result
 
 
@@ -189,14 +191,14 @@ async def edit_comment(
     Check - owner|moderator|admin.
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
 
     # check if comment exists to perform operations on it
-    exists_comment = await comment_service.check_exist_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+    exists_comment = await CommentService(db).check_exist_comment(photo_id=photo_id, comment_id=comment_id)
     if not exists_comment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
@@ -204,13 +206,13 @@ async def edit_comment(
 
     # Todo check admin/moderator role
     # check if comment owner or admin/moderator role
-    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id, db=db)
+    edit_permissions = await CommentService(db).check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id)
     if not edit_permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
         )
 
-    result = await comment_service.edit_comment(photo_id=photo_id, comment_id=comment_id, comment=body.content, db=db)
+    result = await CommentService(db).edit_comment(photo_id=photo_id, comment_id=comment_id, comment=body.content)
     return result
 
 
@@ -233,14 +235,14 @@ async def delete_comment(
     """
 
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
 
     # check if comment exists to perform operations on it
-    exists_comment = await comment_service.check_exist_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+    exists_comment = await CommentService(db).check_exist_comment(photo_id=photo_id, comment_id=comment_id)
     if not exists_comment:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
@@ -248,12 +250,12 @@ async def delete_comment(
 
     # Todo check admin/moderator role
     # check if comment owner or admin/moderator role
-    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id, db=db)
+    edit_permissions = await CommentService(db).check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id)
     if not edit_permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
         )
-    result = await comment_service.delete_comment(photo_id=photo_id, comment_id=comment_id, db=db)
+    result = await CommentService(db).delete_comment(photo_id=photo_id, comment_id=comment_id)
 
     return result
     pass
