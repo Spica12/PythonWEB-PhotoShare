@@ -27,10 +27,9 @@ class PhotoRepo:
 
     async def get_all_photos(
         self, skip: int, limit: int
-    ) -> list[PhotoModel]:
+    ):
         stmt = select(PhotoModel).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
-
         # check here. Pycharm:  Expected type 'list[PhotoModel]', got 'Sequence[PhotoModel]' instead
         return result.scalars().all()
 
@@ -43,3 +42,9 @@ class PhotoRepo:
     async def delete_photo(self, photo: PhotoModel):
         await self.db.delete(photo)
         await self.db.commit()
+
+    async def update_photo(self, photo: PhotoModel):
+        await self.db.commit()
+        await self.db.refresh(photo)
+
+        return photo

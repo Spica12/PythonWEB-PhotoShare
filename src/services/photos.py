@@ -23,5 +23,10 @@ class PhotoService:
 
         return photos
 
-    async def delete_photo(self, photo: PhotoModel):
+    async def delete_photo(self, photo: PhotoModel) -> None:
         await self.repo.delete_photo(photo)
+
+    async def update_photo(self, photo: PhotoModel) -> PhotoModel:
+        photo = await self.repo.update_photo(photo)
+
+        return photo

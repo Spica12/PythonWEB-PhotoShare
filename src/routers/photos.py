@@ -52,7 +52,7 @@ async def show_photos(
     "/{photo_id}",
     response_model=ImageResponseAfterCreateSchema,
     dependencies=None,
-    status_code=None,
+    status_code=status.HTTP_200_OK,
 )
 async def show_photo(
         photo_id: int,
@@ -94,7 +94,12 @@ async def upload_photo(
     return photo
 
 
-@router_photos.delete("/{photo_id}", response_model=None, dependencies=None, status_code=None)
+@router_photos.delete(
+    "/{photo_id}",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
 async def delete_photo(
         photo_id: int,
         db: AsyncSession = Depends(get_db),
@@ -113,6 +118,7 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
+
     result = CloudinaryService().destroy_photo(public_id=photo.public_id)
 
     if result['result'] == 'ok':
@@ -125,9 +131,15 @@ async def delete_photo(
     return result
 
 
-@router_photos.put("/{photo_id}", response_model=None, dependencies=None, status_code=None)
+@router_photos.put(
+    "/{photo_id}",
+    response_model=ImageResponseAfterCreateSchema,
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
 async def update_photo(
         photo_id: int,
+        description: str,
         db: AsyncSession = Depends(get_db),
         current_user: UserModel = Depends(auth_service.get_current_user)
 ):
@@ -139,8 +151,15 @@ async def update_photo(
 
     All depends will be later
     """
-    pass
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    photo.description = description
+    edited_photo = await PhotoService(db).update_photo(photo)
 
+    return edited_photo
 
 # ================================================================================================================
 # comments section
