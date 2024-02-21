@@ -21,7 +21,7 @@ class CloudinaryService:
         )
 
     def upload_photo(self, file: UploadFile, user: UserModel):
-        folder = f"photoshare/{user.username}"
+        folder = f"photoshare/{user.id}"
         result = cloudinary.uploader.upload(
             file.file, folder=folder, overwrite=True
         )

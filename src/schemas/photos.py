@@ -21,6 +21,7 @@ class ImageResponseAfterCreateSchema(BaseModel):
     # TODO
     # This is test schema. Need to think how to do better
     id: int
+    image_url: str
     user_id: uuid.UUID
     description: Optional[str] = None
     created_at: datetime
@@ -30,7 +31,7 @@ class ImageResponseSchema(BaseModel):
     """Pydantic model for serializing picture data in responses."""
     user_id: uuid.UUID
     id: int
-    url: str
+    image_url: str
     description: Optional[str] = None
     tags: Optional[List[str]] = []
     rating: Optional[int] = 0
