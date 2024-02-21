@@ -48,7 +48,12 @@ async def show_photos(
     return photos
 
 
-@router_photos.get("/{photo_id}", response_model=None, dependencies=None, status_code=None)
+@router_photos.get(
+    "/{photo_id}",
+    response_model=ImageResponseAfterCreateSchema,
+    dependencies=None,
+    status_code=None,
+)
 async def show_photo(
         photo_id: int,
         db: AsyncSession = Depends(get_db)
@@ -81,8 +86,10 @@ async def upload_photo(
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     # Upload photo and get url
-    photo_cloud_url = CloudinaryService().upload_photo(file, current_user)
-    photo = await PhotoService(db).add_photo(current_user, photo_cloud_url, description)
+    photo_cloud_url, public_id = CloudinaryService().upload_photo(file, current_user)
+    photo = await PhotoService(db).add_photo(
+        current_user, public_id, photo_cloud_url, description
+    )
 
     return photo
 
@@ -101,6 +108,11 @@ async def delete_photo(
 
     All depends will be later
     """
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
     public_id = CloudinaryService(db).get_public_id()
     pass
 

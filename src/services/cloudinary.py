@@ -26,9 +26,18 @@ class CloudinaryService:
             file.file, folder=folder, overwrite=True
         )
         public_id = result["public_id"]
+
         result_url = cloudinary.CloudinaryImage(public_id).build_url(version=result.get("version"))
 
-        return result_url
+        return result_url, public_id
+
+    def destroy_photo(self, public_id: str):
+        result = cloudinary.uploader.destroy(
+            public_id, invalidate=True
+        )
+
+        return result
+
 
 #     def get_asset_info(self, public_id):
 #         image_info = cloudinary.api.resource(public_id)

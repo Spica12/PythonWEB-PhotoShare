@@ -10,8 +10,11 @@ class PhotoRepo:
     def __init__(self, db):
         self.db: AsyncSession = db
 
-    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
+    async def add_photo(
+        self, user: UserModel, public_id: str, photo_url: str, description: str
+    ) -> PhotoModel:
         new_photo = PhotoModel(
+            public_id=public_id,
             image_url=photo_url,
             user_id=user.id,
             description=description

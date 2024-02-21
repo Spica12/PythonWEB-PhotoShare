@@ -13,8 +13,8 @@ class PhotoService:
         result = await self.repo.get_photo_from_db(photo_id)
         return result
 
-    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
-        new_photo = await self.repo.add_photo(user, photo_url, description)
+    async def add_photo(self, user: UserModel, public_id: str, photo_url: str, description: str) -> PhotoModel:
+        new_photo = await self.repo.add_photo(user, public_id, photo_url, description)
 
         return new_photo
 
