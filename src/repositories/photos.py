@@ -10,8 +10,11 @@ class PhotoRepo:
     def __init__(self, db):
         self.db: AsyncSession = db
 
-    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
+    async def add_photo(
+        self, user: UserModel, public_id: str, photo_url: str, description: str
+    ) -> PhotoModel:
         new_photo = PhotoModel(
+            public_id=public_id,
             image_url=photo_url,
             user_id=user.id,
             description=description
@@ -24,10 +27,9 @@ class PhotoRepo:
 
     async def get_all_photos(
         self, skip: int, limit: int
-    ) -> list[PhotoModel]:
+    ):
         stmt = select(PhotoModel).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
-
         # check here. Pycharm:  Expected type 'list[PhotoModel]', got 'Sequence[PhotoModel]' instead
         return result.scalars().all()
 
@@ -36,3 +38,13 @@ class PhotoRepo:
         stmt = select(PhotoModel).filter_by(id=photo_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def delete_photo(self, photo: PhotoModel):
+        await self.db.delete(photo)
+        await self.db.commit()
+
+    async def update_photo(self, photo: PhotoModel):
+        await self.db.commit()
+        await self.db.refresh(photo)
+
+        return photo

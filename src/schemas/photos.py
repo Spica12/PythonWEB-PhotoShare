@@ -21,6 +21,7 @@ class ImageResponseAfterCreateSchema(BaseModel):
     # TODO
     # This is test schema. Need to think how to do better
     id: int
+    public_id:str
     image_url: str
     user_id: uuid.UUID
     description: Optional[str] = None

@@ -13,8 +13,8 @@ class PhotoService:
         result = await self.repo.get_photo_from_db(photo_id)
         return result
 
-    async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
-        new_photo = await self.repo.add_photo(user, photo_url, description)
+    async def add_photo(self, user: UserModel, public_id: str, photo_url: str, description: str) -> PhotoModel:
+        new_photo = await self.repo.add_photo(user, public_id, photo_url, description)
 
         return new_photo
 
@@ -22,3 +22,11 @@ class PhotoService:
         photos = await self.repo.get_all_photos(skip, limit)
 
         return photos
+
+    async def delete_photo(self, photo: PhotoModel) -> None:
+        await self.repo.delete_photo(photo)
+
+    async def update_photo(self, photo: PhotoModel) -> PhotoModel:
+        photo = await self.repo.update_photo(photo)
+
+        return photo
