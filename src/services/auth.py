@@ -44,9 +44,9 @@ class AuthService:
         user = await UserRepo(db).get_user_by_email(email)
         return user
 
-    async def get_current_user(self, email: str, db: AsyncSession):
-        user = await UserRepo(db).get_user_by_email(email)
-        return user
+    # async def get_current_user(self, email: str, db: AsyncSession):
+    #     user = await UserRepo(db).get_user_by_email(email)
+    #     return user
 
     async def get_current_user(
         self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
@@ -56,7 +56,6 @@ class AuthService:
             detail=messages.COULD_NOT_VALIDATE_CREDENTIALS,
             headers={"WWW-AUTHENTICATE": "BEARER"},
         )
-
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
@@ -71,7 +70,6 @@ class AuthService:
             raise credentials_exception
 
         user_hash = str(email)
-        print(user_hash)
         user = await UserRepo(db).get_user_by_email(user_hash)
         if user is None:
             raise credentials_exception

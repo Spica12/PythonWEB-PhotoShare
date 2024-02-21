@@ -8,10 +8,6 @@ class CommentService:
     # def __init__(self, db: AsyncSession):
     #     self.repo = CommentRepo(db=db)
 
-    async def get_photo_exists(self, photo_id: int, db: AsyncSession):
-        result = await CommentRepo(db).get_photo_from_db(photo_id)
-        return result
-
     async def check_exist_comment(self, photo_id: int, comment_id: int, db: AsyncSession):
         result = await CommentRepo(db).get_comment(photo_id, comment_id)
         return result
@@ -19,7 +15,7 @@ class CommentService:
     async def check_permissions(self, photo_id: int, comment_id: int, user_id: UUID, db: AsyncSession):
         # ToDO add moderator and admin check
         result = await CommentRepo(db).get_comment(photo_id, comment_id)
-        if str(result.user_id) != user_id:
+        if result.user_id != user_id:
             return None
         else:
             return result

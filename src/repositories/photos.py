@@ -1,4 +1,3 @@
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,14 +8,6 @@ from src.models.users import UserModel
 class PhotoRepo:
 
     def __init__(self, db):
-        """
-        The __init__ function is called when the class is instantiated.
-        It sets up the database connection and creates a new session for each request.
-
-        :param self: Represent the instance of the class
-        :param db: Pass in a database connection to the class
-        :return: Nothing
-        """
         self.db: AsyncSession = db
 
     async def add_photo(self, user: UserModel, photo_url: str, description: str) -> PhotoModel:
@@ -38,3 +29,10 @@ class PhotoRepo:
         result = await self.db.execute(stmt)
 
         return result.scalars().all()
+
+    # to check if the object exists or get one photo by id
+    async def get_photo_from_db(self, photo_id: int):
+        stmt = select(PhotoModel).filter_by(id=photo_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+

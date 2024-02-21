@@ -6,10 +6,15 @@ from src.conf import messages
 from src.dependencies.database import get_db
 from src.models.users import UserModel
 from src.schemas import comment
+
 from src.schemas.photos import ImageResponseAfterCreateSchema
 from src.services.auth import auth_service
-from src.services.cloudinary import CloudinaryService
+
 from src.services.comments import comment_service
+from src.services.photos import photo_service
+from src.conf import messages
+
+from src.services.cloudinary import CloudinaryService
 from src.services.photos import PhotoService
 from src.services.qr import QRCodeService
 
@@ -29,11 +34,12 @@ router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 async def show_photos(
         limit: int = Query(10, ge=10, le=100),
         skip: int = Query(0, ge=0),
-        db: AsyncSession = Depends(get_db),
-        user: UserModel = Depends(auth_service.get_current_user)
+        db: AsyncSession = Depends(get_db)
 ):
     """
     Show all images with query parameters.
+    Show for all users, unregistered too
+    All depends will be later
     """
     photos = await PhotoService(db).get_all_photos(user, skip, limit)
 
@@ -47,6 +53,7 @@ async def show_photo(
 ):
     """
     Show image by id
+    Show for all users, unregistered too
 
     All depends will be later
 
@@ -54,7 +61,7 @@ async def show_photo(
     pass
 
 
-@router_photos.post(
+  @router_photos.post(
     "/",
     response_model=ImageResponseAfterCreateSchema,
     dependencies=None,
@@ -63,12 +70,12 @@ async def show_photo(
 async def upload_photo(
     file: UploadFile = File(),
     description: str | None = Form('', description="Add description to your photo"),
-    user: UserModel = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     # Upload photo and get url
     photo_cloud_url = CloudinaryService().upload_photo(file, user)
-    photo = await PhotoService(db).add_photo(user, photo_cloud_url, description)
+    photo = await PhotoService(db).add_photo(current_user, photo_cloud_url, description)
 
     return photo
 
@@ -76,11 +83,14 @@ async def upload_photo(
 @router_photos.delete("/{photo_id}", response_model=None, dependencies=None, status_code=None)
 async def delete_photo(
         photo_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
     Delete image from db and cloudinary.
-    Must to check if admin or owner of the image
+    Only for registered users
+
+    We must to check if admin or owner of the image
 
     All depends will be later
     """
@@ -90,11 +100,14 @@ async def delete_photo(
 @router_photos.put("/{photo_id}", response_model=None, dependencies=None, status_code=None)
 async def update_photo(
         photo_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
     Change image description.
-    Must to check if admin, moderator or owner of the image
+    Only for registered users
+
+    We must to check if admin, moderator or owner of the image
 
     All depends will be later
     """
@@ -119,9 +132,10 @@ async def show_comments(
 ):
     """
     Show all comments for specified image.
+    Show for all users, unregistered too
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
@@ -138,22 +152,21 @@ async def show_comments(
 async def add_comment(
         body: comment.CommentSchema,
         photo_id: int,
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
 ):
-    # TODO add depends for user
     """
     Add comment to current image
-    All depends of user will be later
+    Only for registered users
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
     # if photo object in database - we can add comment
-    # Todo replace user_id with current user
-    result = await comment_service.add_comment(photo_id=photo_id, comment=body.content, user_id=1, db=db)
+    result = await comment_service.add_comment(photo_id=photo_id, comment=body.content, user_id=current_user.id, db=db)
     return result
 
 
@@ -166,17 +179,17 @@ async def edit_comment(
         body: comment.CommentSchema,
         photo_id: int = Path(ge=1),
         comment_id: int = Path(ge=1),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
-    Edit comment by id or another reference ???
-
-    All depends will be later
+    Edit comment by id
+    Only for registered users.
 
     Check - owner|moderator|admin.
     """
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
@@ -191,7 +204,7 @@ async def edit_comment(
 
     # Todo check admin/moderator role
     # check if comment owner or admin/moderator role
-    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id="0a9c1d93-87dc-4511-8536-52d282218789", db=db)
+    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id, db=db)
     if not edit_permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
@@ -209,7 +222,8 @@ async def edit_comment(
 async def delete_comment(
         photo_id: int = Path(ge=1),
         comment_id: int = Path(ge=1),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
     Delete comment by id
@@ -219,7 +233,7 @@ async def delete_comment(
     """
 
     # check if we have photo object in database to perform operations with comments
-    exists_photo = await comment_service.get_photo_exists(photo_id=photo_id, db=db)
+    exists_photo = await photo_service.get_photo_exists(photo_id=photo_id, db=db)
     if not exists_photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
@@ -234,8 +248,7 @@ async def delete_comment(
 
     # Todo check admin/moderator role
     # check if comment owner or admin/moderator role
-    user_id = "0a9c1d93-87dc-4511-8536-52d282218789" # test UUID, del after add users depends
-    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=user_id, db=db)
+    edit_permissions = await comment_service.check_permissions(photo_id=photo_id, comment_id=comment_id, user_id=current_user.id, db=db)
     if not edit_permissions:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS

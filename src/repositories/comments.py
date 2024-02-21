@@ -3,22 +3,15 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.photos import CommentModel, PhotoModel
+from src.models.photos import CommentModel
 
 
 class CommentRepo:
     def __init__(self, db):
         self.db: AsyncSession = db
 
-    # to check if the object exists
-    async def get_photo_from_db(self, photo_id: int):
-        # to check if object exists before comment
-        stmt = select(PhotoModel).filter_by(id=photo_id)
-        result = await self.db.execute(stmt)
-        return result.scalar_one_or_none()
-
     async def add_comment(self, photo_id: int, comment: str, user_id: UUID):
-        new_comment = CommentModel(content=comment, photo_id=photo_id, user_id="0a9c1d93-87dc-4511-8536-52d282218789")
+        new_comment = CommentModel(content=comment, photo_id=photo_id, user_id=user_id)
         self.db.add(new_comment)
         await self.db.commit()
         await self.db.refresh(new_comment)
