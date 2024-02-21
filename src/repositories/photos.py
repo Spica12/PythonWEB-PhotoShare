@@ -23,9 +23,9 @@ class PhotoRepo:
         return new_photo
 
     async def get_all_photos(
-        self, user: UserModel, skip: int, limit: int
+        self, skip: int, limit: int
     ) -> list[PhotoModel]:
-        stmt = select(PhotoModel).filter_by(user_id=user.id).offset(skip).limit(limit)
+        stmt = select(PhotoModel).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
 
         # check here. Pycharm:  Expected type 'list[PhotoModel]', got 'Sequence[PhotoModel]' instead
@@ -36,4 +36,3 @@ class PhotoRepo:
         stmt = select(PhotoModel).filter_by(id=photo_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-

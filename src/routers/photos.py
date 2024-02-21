@@ -43,7 +43,7 @@ async def show_photos(
     Show for all users, unregistered too
     All depends will be later
     """
-    photos = await PhotoService(db).get_all_photos(user, skip, limit)
+    photos = await PhotoService(db).get_all_photos(skip, limit)
 
     return photos
 
@@ -76,7 +76,7 @@ async def upload_photo(
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     # Upload photo and get url
-    photo_cloud_url = CloudinaryService().upload_photo(file, user)
+    photo_cloud_url = CloudinaryService().upload_photo(file, current_user)
     photo = await PhotoService(db).add_photo(current_user, photo_cloud_url, description)
 
     return photo
