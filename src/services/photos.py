@@ -4,14 +4,12 @@ from src.repositories.photos import PhotoRepo
 
 
 class PhotoService:
+    # def __init__(self, db: AsyncSession):
+    #     self.repo = PhotoRepo(db=db)
 
-    def __init__(self, db: AsyncSession):
-        """
-        The __init__ function is called when the class is instantiated.
-        It's used to initialize variables and do other setup tasks that need to be done every time an object of this class is created.
+    async def get_photo_exists(self, photo_id: int, db: AsyncSession):
+        result = await PhotoRepo(db).get_photo_from_db(photo_id)
+        return result
 
-        :param self: Represent the instance of the class
-        :param db: AsyncSession: Create a connection to the database
-        :return: Nothing
-        """
-        self.repo = PhotoRepo(db=db)
+
+photo_service = PhotoService()
