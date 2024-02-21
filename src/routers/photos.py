@@ -128,7 +128,6 @@ async def delete_photo(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
 
-    return result
 
 
 @router_photos.put(
