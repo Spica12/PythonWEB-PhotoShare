@@ -1,6 +1,7 @@
 from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from src.dependencies.database import get_db
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
@@ -19,8 +20,8 @@ class UserRepo:
 
         return user
 
-    async def get_user_by_id(self, user_id: str):
-        stmt = select(UserModel).filter_by(user_id=user_id)
+    async def get_user_by_id(self, user_id: UUID):
+        stmt = select(UserModel).filter_by(id=user_id)
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
 

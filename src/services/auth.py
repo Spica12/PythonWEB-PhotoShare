@@ -5,6 +5,7 @@ from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from src.models.users import UserModel
 from src.conf.config import config
@@ -21,7 +22,7 @@ class AuthService:
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
-    async def get_user_by_id(self, user_id: int, db: AsyncSession):
+    async def get_user_by_id(self, user_id: UUID, db: AsyncSession):
         user = await UserRepo(db).get_user_by_id(user_id)
         return user
 
@@ -44,9 +45,9 @@ class AuthService:
         user = await UserRepo(db).get_user_by_email(email)
         return user
 
-    async def get_current_user(self, email: str, db: AsyncSession):
-        user = await UserRepo(db).get_user_by_email(email)
-        return user
+    # async def get_current_user(self, email: str, db: AsyncSession):
+    #     user = await UserRepo(db).get_user_by_email(email)
+    #     return user
 
     async def get_current_user(
         self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
@@ -56,7 +57,6 @@ class AuthService:
             detail=messages.COULD_NOT_VALIDATE_CREDENTIALS,
             headers={"WWW-AUTHENTICATE": "BEARER"},
         )
-
         try:
             payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
             email = payload["sub"]
@@ -71,7 +71,6 @@ class AuthService:
             raise credentials_exception
 
         user_hash = str(email)
-        print(user_hash)
         user = await UserRepo(db).get_user_by_email(user_hash)
         if user is None:
             raise credentials_exception
