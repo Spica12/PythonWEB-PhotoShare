@@ -60,8 +60,13 @@ async def show_photo(
     All depends will be later
 
     """
-    pass
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
 
+    return photo
 
 @router_photos.post(
     "/",
@@ -96,6 +101,7 @@ async def delete_photo(
 
     All depends will be later
     """
+    public_id = CloudinaryService(db).get_public_id()
     pass
 
 
