@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from src.models.users import UserModel
 
 from src.dependencies.database import get_db
@@ -10,6 +10,7 @@ from src.services.auth import auth_service
 from src.conf import messages
 
 router_auth = APIRouter(prefix="/auth", tags=["Auth"])
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 
 
 @router_auth.post(
@@ -69,8 +70,12 @@ async def login(
 
 
 @router_auth.get("/logout")
-async def logout():
-    pass
+async def logout(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    try:
+        await auth_service.logout(token, db)
+    except HTTPException as e:
+        # Логіка обробки винятку
+        raise e  
 
 
 @router_auth.get("/refresh", response_model="")

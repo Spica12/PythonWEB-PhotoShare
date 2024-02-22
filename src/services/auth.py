@@ -7,7 +7,6 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.users import UserModel
-from src.models.users import BlacklistToken
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
@@ -21,9 +20,6 @@ class AuthService:
     ALGORITHM = config.ALGORITHM
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
-
-    def __init__(self, db: AsyncSession):
-        self.repo = UserRepo(db)
 
 
     async def get_user_by_id(self, user_id: int, db: AsyncSession):
@@ -117,11 +113,34 @@ class AuthService:
         await UserRepo(db).update_refresh_token(user, refresh_token)
 
     async def add_token_to_blacklist(self, token: str, db: AsyncSession):
-        async with db() as session:
-            blacklist_token = BlacklistToken(token=token)
-            session.add(blacklist_token)
-            await session.commit()
+        await UserRepo(db).add_token_to_blacklist(token)
+
+    async def logout(self, token: str, db: AsyncSession):
+        # Перевірка автентифікації та отримання користувача за email
+        credentials_exception = HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=messages.COULD_NOT_VALIDATE_CREDENTIALS,
+            headers={"WWW-AUTHENTICATE": "BEARER"},
+    )
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            email = payload["sub"]
+
+            if payload["scope"] == "access_token":
+                if email is None:
+                    raise credentials_exception
+            else:
+                raise credentials_exception
+
+        except JWTError as e:
+            raise credentials_exception
+
+        user_hash = str(email)
+        user = await UserRepo(db).get_user_by_email(user_hash)
+        if user is None:
+            raise credentials_exception
 
 
+        return user
 
 auth_service = AuthService()
