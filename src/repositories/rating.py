@@ -26,9 +26,10 @@ class RatingRepo:
 
     async def get_avg_rate(self, photo_id: int):
         # to calculate average rating
-        stmt = select(func.avg(RatingModel)).filter(RatingModel.photo_id == photo_id)
+        stmt = select(func.avg(RatingModel.value)).filter(RatingModel.photo_id == photo_id)
+
         result = await self.db.execute(stmt)
-        return result
+        return result.scalar()
 
     async def delete_single_rate(self, photo_id: int, user_id: UUID):
         stmt = select(RatingModel).filter(

@@ -301,6 +301,12 @@ async def delete_comment(
     return result
 
 
+# ================================================================================================================
+# comments section
+# ================================================================================================================
+
+
+
 @router_photos.post("/{photo_id}/rating",
                     response_model=rating.RateResponseSchema,
                     dependencies=None,
@@ -313,6 +319,8 @@ async def add_rate(
         current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
+    TESTING ROUTE
+
     Add rating to the image
 
     Temporary rote for testing functionality
@@ -345,6 +353,8 @@ async def delete_rate(
         db: AsyncSession = Depends(get_db)
 ):
     """
+    TESTING ROUTE
+
     Delete rate
 
     Temporary rote for testing functionality
@@ -362,6 +372,38 @@ async def delete_rate(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=RATING_NOT_SET
         )
+    return result
+
+
+@router_photos.get("/{photo_id}/rating",
+                   response_model=None,
+                   dependencies=None,
+                   status_code=status.HTTP_200_OK
+                   )
+async def show_rates(
+        photo_id: int = Path(ge=1),
+        db: AsyncSession = Depends(get_db),
+):
+    """
+    TESTING ROUTE
+
+    View avg rate for photo with photo_is
+
+    Temporary rote for testing functionality
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).get_avg_rate(photo_id=photo_id)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Test"
+        )
+
     return result
 
 
