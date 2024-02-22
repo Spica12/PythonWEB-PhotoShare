@@ -63,7 +63,6 @@ class CommentModel(Base):
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="comments")
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     user: Mapped[UserModel] = relationship("UserModel", backref="comments")
-    # editor_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
