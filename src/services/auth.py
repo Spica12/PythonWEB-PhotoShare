@@ -7,7 +7,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.users import UserModel
-from src.models.BlacklistTokenModel import BlacklistTokenModel
+from src.models.users import BlacklistToken
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
@@ -21,6 +21,10 @@ class AuthService:
     ALGORITHM = config.ALGORITHM
 
     oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+
+    def __init__(self, db: AsyncSession):
+        self.repo = UserRepo(db)
+
 
     async def get_user_by_id(self, user_id: int, db: AsyncSession):
         user = await UserRepo(db).get_user_by_id(user_id)
@@ -114,7 +118,7 @@ class AuthService:
 
     async def add_token_to_blacklist(self, token: str, db: AsyncSession):
         async with db() as session:
-            blacklist_token = BlacklistTokenModel(token=token)
+            blacklist_token = BlacklistToken(token=token)
             session.add(blacklist_token)
             await session.commit()
 
