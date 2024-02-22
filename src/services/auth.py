@@ -109,6 +109,10 @@ class AuthService:
 
         return encode_jwt
 
+    async def get_refresh_token_by_user(self, user: UserModel, db: AsyncSession):
+        refresh_token = await UserRepo(db).get_refresh_token_by_user(user)
+        return refresh_token
+
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None, db: AsyncSession):
         await UserRepo(db).update_refresh_token(user, refresh_token)
 

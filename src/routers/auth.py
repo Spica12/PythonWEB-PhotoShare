@@ -83,12 +83,13 @@ async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get
     token = credentials.credentials
     email = await auth_service.get_email_from_token(token)
     user = await auth_service.get_user_by_email(email, db)
-    if user.refresh_token != token:
+    refresh_token = await auth_service.get_refresh_token_by_user(user, db)
+    if refresh_token.token != token:
         await auth_service.update_refresh_token(user, None, db)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_REFRESH_TOKEN)
 
-    access_token = await auth_service.create_access_token(data={"sub": email})
-    refresh_token = await auth_service.create_refresh_token(data={"sub": email})
+    access_token = await auth_service.create_access_token(user.email)
+    refresh_token = await auth_service.create_refresh_token(user.email)
     await auth_service.update_refresh_token(user, refresh_token, db)
 
     return {"access_token": access_token, "refresh_token": refresh_token, "token_type": "bearer"}
