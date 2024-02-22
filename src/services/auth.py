@@ -6,6 +6,9 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from src.models.users import UserModel
 from src.conf.config import config
@@ -134,6 +137,43 @@ class AuthService:
 
     async def confirmed_email(self, user: UserModel, db: AsyncSession):
         await UserRepo(db).confirmed_email(user)
+
+    def generate_random_password(self):
+        # Генерація рандомного пароля
+        length = 12
+        alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        return ''.join(secrets.choice(alphabet) for i in range(length))
+
+    async def reset_password_and_notify_user(self, email: str, db: AsyncSession):
+        user = await self.get_user_by_email(email, db)
+
+        if user:
+            new_password = self.generate_random_password()
+            hashed_password = self.get_password_hash(new_password)
+
+            # Оновити пароль користувача в базі даних
+            await self.update_user_password(user.id, hashed_password)
+
+            # Відправити новий пароль на електронну пошту
+            self.send_password_reset_notification(email, new_password)
+
+    def send_password_reset_notification(email, new_password):
+        sender_email = MAIL_USERNAME
+        receiver_email = email
+        subject = "Password Reset"
+        body = f"Your new password is: {new_password}"
+
+        message = MIMEMultipart()
+        message["From"] = sender_email
+        message["To"] = receiver_email
+        message["Subject"] = subject
+        message.attach(MIMEText(body, "plain"))
+
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(sender_email, "your_email_password")
+            text = message.as_string()
+            server.sendmail(sender_email, receiver_email, text)
 
 
 auth_service = AuthService()

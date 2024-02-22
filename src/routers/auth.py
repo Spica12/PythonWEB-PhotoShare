@@ -5,7 +5,8 @@ from src.models.users import UserModel
 
 from src.dependencies.database import get_db
 
-from src.schemas.users import UserSchema, UserResponse, TokenSchema, RequestEmail
+from src.schemas.users import UserSchema, UserResponse, TokenSchema
+from src.schemas.email import RequestEmail
 from src.services.auth import auth_service
 from src.services.email import EmailService
 from src.conf import messages
@@ -116,3 +117,22 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
 #     if user:
 #         background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
 #     return {"message": "Check your email for confirmation."}
+
+@router_auth.post("/password-reset", response_model=None)
+async def request_password_reset(password_reset_request: RequestEmail, db: AsyncSession = Depends(get_db)):
+    user = await auth_service.get_user_by_email(password_reset_request.email, db)
+
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Генерування нового рандомного пароля
+    new_password = auth_service.generate_random_password()
+
+    # Оновлення пароля користувача в базі даних
+    auth_service.update_user_password(user.id, new_password)
+
+    # Відправка нового пароля на електронну пошту
+    EmailService().send_password_reset_email(user.email, new_password)
+
+    return {"message": "Password reset request successful. Check your email for the new password."}
