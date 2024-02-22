@@ -105,7 +105,7 @@ async def upload_photo(
     "/{photo_id}",
     response_model=None,
     dependencies=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_photo(
         photo_id: int,
