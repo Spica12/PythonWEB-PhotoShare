@@ -1,6 +1,8 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm, HTTPBearer
+from fastapi.responses import JSONResponse
+
 from src.models.users import UserModel
 
 from src.dependencies.database import get_db
@@ -107,32 +109,24 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
     return {"message": messages.EMAIL_CONFIRMED}
 
 
-# @router_auth.post('/request_email')
-# async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
-#                         db: AsyncSession = Depends(get_db)):
-#     user = await auth_service.get_user_by_email(body.email, db)
+@router_auth.post('/request_email')
+async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, request: Request,
+                        db: AsyncSession = Depends(get_db)):
+    user = await auth_service.get_user_by_email(body.email, db)
 
-#     if user.confirmed:
-#         return {"message": "Your email is already confirmed"}
-#     if user:
-#         background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
-#     return {"message": "Check your email for confirmation."}
+    if user.confirmed:
+        return {"message": "Your email is already confirmed"}
+    if user:
+        background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
+    return {"message": "Check your email for confirmation."}
+
 
 @router_auth.post("/password-reset", response_model=None)
 async def request_password_reset(password_reset_request: RequestEmail, db: AsyncSession = Depends(get_db)):
-    user = await auth_service.get_user_by_email(password_reset_request.email, db)
+    try:
+        await auth_service.reset_password_and_notify_user(password_reset_request.email, db)
+        return {"message": "Password reset request successful. Check your email for the new password."}
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Генерування нового рандомного пароля
-    new_password = auth_service.generate_random_password()
-
-    # Оновлення пароля користувача в базі даних
-    auth_service.update_user_password(user.id, new_password)
-
-    # Відправка нового пароля на електронну пошту
-    EmailService().send_password_reset_email(user.email, new_password)
-
-    return {"message": "Password reset request successful. Check your email for the new password."}

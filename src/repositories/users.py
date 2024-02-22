@@ -73,3 +73,7 @@ class UserRepo:
     async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True
         await self.db.commit()
+
+    async def update_user(self, user: UserModel):
+        async with self.db.begin():
+            self.db.merge(user)

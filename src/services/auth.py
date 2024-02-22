@@ -7,6 +7,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import smtplib
+import secrets
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
@@ -151,29 +152,39 @@ class AuthService:
             new_password = self.generate_random_password()
             hashed_password = self.get_password_hash(new_password)
 
-            # Оновити пароль користувача в базі даних
-            await self.update_user_password(user.id, hashed_password)
+            # Update user's password in the database
+            await self.update_user_password(user.id, hashed_password, db)
 
-            # Відправити новий пароль на електронну пошту
-            self.send_password_reset_notification(email, new_password)
+            # Send password reset notification
+            await self.send_password_reset_notification(email, new_password)
 
-    def send_password_reset_notification(email, new_password):
-        sender_email = MAIL_USERNAME
-        receiver_email = email
-        subject = "Password Reset"
-        body = f"Your new password is: {new_password}"
+    async def send_password_reset_notification(self, email, new_password):
+        try:
+            # Generate a new password reset token
+            token_reset = auth_service.create_email_token({"sub": email})
 
-        message = MIMEMultipart()
-        message["From"] = sender_email
-        message["To"] = receiver_email
-        message["Subject"] = subject
-        message.attach(MIMEText(body, "plain"))
+            # Prepare the email message
+            message = MessageSchema(
+                subject="Password Reset",
+                recipients=[email],
+                template_body={"new_password": new_password, "token_reset": token_reset},
+                subtype=MessageType.html
+            )
 
-        with smtplib.SMTP("smtp.gmail.com", 587) as server:
-            server.starttls()
-            server.login(sender_email, "your_email_password")
-            text = message.as_string()
-            server.sendmail(sender_email, receiver_email, text)
+            # Send the email using EmailService
+            await EmailService().fm.send_message(message, template_name="password_reset_email.html")
+
+        except ConnectionErrors as err:
+            print(err)
+
+    async def update_user_password(self, user_id: UUID, new_password: str, db: AsyncSession):
+        user = await self.get_user_by_id(user_id, db)
+        if user:
+            hashed_password = self.get_password_hash(new_password)
+            user.password = hashed_password
+            user_repo = UserRepo(db)
+
+            await user_repo.update_user(user)
 
 
 auth_service = AuthService()
