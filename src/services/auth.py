@@ -139,5 +139,33 @@ class AuthService:
     async def confirmed_email(self, user: UserModel, db: AsyncSession):
         await UserRepo(db).confirmed_email(user)
 
+    async def logout(self, token: str, db: AsyncSession):
+        credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail=messages.COULD_NOT_VALIDATE_CREDENTIALS,
+        headers={"WWW-AUTHENTICATE": "BEARER"},
+    )
+        try:
+            payload = jwt.decode(token, self.SECRET_KEY, algorithms=[self.ALGORITHM])
+            email = payload["sub"]
+
+            if payload["scope"] == "access_token":
+                if email is None:
+                    raise credentials_exception
+            else:
+                raise credentials_exception
+
+        except JWTError as e:
+            raise credentials_exception
+
+        user_hash = str(email)
+        user = await UserRepo(db).get_user_by_email(user_hash)
+        if user is None:
+            raise credentials_exception
+
+
+        return None
+
+
 
 auth_service = AuthService()

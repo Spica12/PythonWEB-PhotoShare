@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm, HTTPBearer
+from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordBearer, OAuth2PasswordRequestForm, HTTPBearer
 from src.models.users import UserModel
 
 from src.dependencies.database import get_db
@@ -11,6 +11,7 @@ from src.services.email import EmailService
 from src.conf import messages
 from src.repositories.users import UserRepo
 
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
 router_auth = APIRouter(prefix="/auth", tags=["Auth"])
 get_refresh_token = HTTPBearer()
 
@@ -76,8 +77,11 @@ async def login(
 
 
 @router_auth.get("/logout")
-async def logout():
-    pass
+async def logout(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+    try:
+        await auth_service.logout(token, db)
+    except HTTPException as e:
+        raise e  
 
 
 @router_auth.get("/refresh", response_model=TokenSchema)
