@@ -35,10 +35,10 @@ class RatingService:
         result = await self.repo.delete_single_rate(photo_id, user_id)
         return result
 
-    async def get_avg_rate(self, photo_id: int): #-> float | None:
+    async def get_avg_rate(self, photo_id: int) -> float | None:
         result = await self.repo.get_avg_rate(photo_id)
-        # if result:
-        #     return round(result, 2)
+        if result:
+            return round(result, 2)
         return result
 
 

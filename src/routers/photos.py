@@ -339,7 +339,9 @@ async def add_rate(
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=messages.ALREADY_SET
         )
+
     return result
+
 
 
 @router_photos.delete("/{photo_id}/rating/{username}",
@@ -370,7 +372,7 @@ async def delete_rate(
     result = await RatingService(db).delete_rate(photo_id=photo_id, username=username)
     if not result:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=RATING_NOT_SET
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.RATING_NOT_SET
         )
     return result
 
@@ -405,7 +407,6 @@ async def show_rates(
         )
 
     return result
-
 
 # @router.post("/create_image_link/")
 # def create_image_link(url: str, db: Session = Depends(get_db)):
