@@ -29,9 +29,12 @@ async def register(body: UserSchema, request: Request, bt: BackgroundTasks, db: 
     body.password = auth_service.get_password_hash(body.password)
     new_user = await auth_service.create_user(body, db)
 
-    bt.add_task(
-        EmailService().send_varification_mail, new_user.email, new_user.username, str(request.base_url)
-    )
+    # when we create the first user he is already confirmed. Don't need to send a verification mail.
+    if not new_user.confirmed:
+        bt.add_task(
+            EmailService().send_varification_mail, new_user.email, new_user.username, str(request.base_url)
+        )
+
     return new_user
 
 
