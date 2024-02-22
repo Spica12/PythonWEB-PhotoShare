@@ -18,4 +18,5 @@ EMAIL_CONFIRMED = "Email confirmed"
 OPERATION_FORBIDDEN = "Operation forbidden"
 
 ALREADY_SET = "Already set"
+RATING_NOT_SET = "User not found or rating not set"
 

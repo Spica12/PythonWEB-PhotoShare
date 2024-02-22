@@ -270,7 +270,7 @@ async def edit_comment(
 
 @router_photos.delete("/{photo_id}/comment/{comment_id}",
                       response_model=None,
-                      dependencies=[Depends(RoleChecker([Roles.admin]))],
+                      dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
                       status_code=status.HTTP_204_NO_CONTENT
                       )
 async def delete_comment(
@@ -306,8 +306,8 @@ async def delete_comment(
                     dependencies=None,
                     status_code=status.HTTP_201_CREATED
                     )
-async def add_rating(
-        body1: rating.SetRateSchema,
+async def add_rate(
+        body: rating.SetRateSchema,
         photo_id: int,
         db: AsyncSession = Depends(get_db),
         current_user: UserModel = Depends(auth_service.get_current_user)
@@ -330,6 +330,37 @@ async def add_rating(
     if result is None:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=messages.ALREADY_SET
+        )
+    return result
+
+
+@router_photos.delete("/{photo_id}/rating/{username}",
+                      response_model=None,
+                      dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
+                      status_code=status.HTTP_204_NO_CONTENT
+                      )
+async def delete_rate(
+        photo_id: int = Path(ge=1),
+        username: str = "",
+        db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete rate
+
+    Temporary rote for testing functionality
+    """
+
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).delete_rate(photo_id=photo_id, username=username)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=RATING_NOT_SET
         )
     return result
 
