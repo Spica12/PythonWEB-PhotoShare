@@ -1,6 +1,7 @@
 from fastapi import (APIRouter, Depends, File, Form, HTTPException, Path,
                      Query, UploadFile, status)
 from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Union
 
 # config
 from src.conf import messages
@@ -12,13 +13,16 @@ from src.models.users import Roles
 
 # schemas
 from src.schemas import comment
+from src.schemas import rating
 from src.schemas.photos import ImageResponseAfterCreateSchema
+
 
 # services
 from src.services.auth import auth_service
 from src.services.cloudinary import CloudinaryService
 from src.services.photos import PhotoService
 from src.services.comments import CommentService
+from src.services.rating import RatingService
 from src.services.roles import RoleChecker
 from src.services.qr import QRCodeService
 
@@ -295,6 +299,40 @@ async def delete_comment(
 
     result = await CommentService(db).delete_comment(photo_id=photo_id, comment_id=comment_id)
     return result
+
+
+@router_photos.post("/{photo_id}/rating",
+                    response_model=rating.RateResponseSchema,
+                    dependencies=None,
+                    status_code=status.HTTP_201_CREATED
+                    )
+async def add_rating(
+        body1: rating.SetRateSchema,
+        photo_id: int,
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
+):
+    """
+    Add rating to the image
+
+    Temporary rote for testing functionality
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).set_rate(photo_id=photo_id, rate=body.value, user_id=current_user.id)
+
+    # if return None - rate was already set
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=messages.ALREADY_SET
+        )
+    return result
+
 
 # @router.post("/create_image_link/")
 # def create_image_link(url: str, db: Session = Depends(get_db)):

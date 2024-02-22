@@ -1,5 +1,6 @@
-from sqlalchemy import select
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from src.models.photos import PhotoModel
 from src.models.users import UserModel
@@ -36,6 +37,14 @@ class PhotoRepo:
     # to check if the object exists or get one photo by id
     async def get_photo_from_db(self, photo_id: int):
         stmt = select(PhotoModel).filter_by(id=photo_id)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def get_photo_owner(self, photo_id: int, user_id: UUID):
+        # to check if the user is owner of the photo. If result not None = exists
+        stmt = select(PhotoModel).filter(
+            and_(PhotoModel.id == photo_id, PhotoModel.user_id == user_id)
+        )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 

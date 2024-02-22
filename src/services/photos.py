@@ -1,4 +1,5 @@
 from sqlalchemy.ext.asyncio import AsyncSession
+from uuid import UUID
 
 from src.models.photos import PhotoModel
 from src.models.users import UserModel
@@ -11,6 +12,10 @@ class PhotoService:
 
     async def get_photo_exists(self, photo_id: int):
         result = await self.repo.get_photo_from_db(photo_id)
+        return result
+
+    async def check_photo_owner(self, photo_id: int, user_id: UUID):
+        result = await self.repo.get_photo_owner(photo_id, user_id)
         return result
 
     async def add_photo(self, user: UserModel, public_id: str, photo_url: str, description: str) -> PhotoModel:
