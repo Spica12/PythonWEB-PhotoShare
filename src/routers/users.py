@@ -6,7 +6,7 @@ from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
 from src.models.users import UserModel, Roles
 from src.services.auth import AuthService
-from src.repositories.users import UserRepo
+# from src.repositories.users import UserRepo
 from src.repositories import users as repositories_users
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
@@ -27,7 +27,7 @@ async def get_current_user(
     return user
 
 
-@router_users.get("/{username}", response_model=UserResponse)
+@router_users.get("/{username}", response_model=AnotherUsers)
 async def get_user(
         username: str,
         db: AsyncSession = Depends(get_db),
@@ -45,7 +45,7 @@ async def get_user(
     return user_info
 
 
-@router_users.put("/my_profile", response_model=UserResponse)
+@router_users.put("/my_profile", response_model=UserUpdate)
 async def update_current_user(user_update: UserUpdate,
                               user: UserModel = Depends(auth_service.get_current_user),
                               db: AsyncSession = Depends(get_db),

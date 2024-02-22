@@ -15,14 +15,14 @@ class UserSchema(BaseModel):
 
 class UserResponse(BaseModel):
     """Pydantic model for serializing user data in responses."""
-    id: uuid.UUID
+    # id: uuid.UUID
     username: str
     email: EmailStr
-    avatar: str | None
+    avatar: HttpUrl | None
     role: Roles
     # picture_count: Optional[int]
-    confirmed: bool
-    is_active: bool
+    # confirmed: bool
+    # is_active: bool
     created_at: datetime
 
     class Config:
@@ -41,11 +41,14 @@ class UserUpdate(UserSchema):
 class AnotherUsers(BaseModel):
     """Pydantic model for serializing simplified user data in responses."""
     username: str
-    email: EmailStr
+    # email: EmailStr
     avatar: HttpUrl | None
-    role: Roles
+    # role: Roles
     picture_count: Optional[int]
     created_at: datetime
+
+    class Config:
+        from_attributes = True
 
 
 class TokenSchema(BaseModel):
