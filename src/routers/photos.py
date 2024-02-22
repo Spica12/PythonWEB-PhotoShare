@@ -29,6 +29,11 @@ from src.services.qr import QRCodeService
 # routers
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
+# TODO remove in release
+# deprecated routers.
+router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
+
+
 # ================================================================================================================
 # photos section
 # ================================================================================================================
@@ -134,7 +139,7 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
-
+# todo -- >> return ?? + status code = 204
 
 
 @router_photos.put(
@@ -168,11 +173,12 @@ async def update_photo(
     return edited_photo
 
 # ================================================================================================================
-# comments section
+# TODO REMOVE EVERYTHING BELOW THIS TEXT
+#  DEPRECATED
 # ================================================================================================================
 
 
-@router_photos.get("/{photo_id}/comments",
+@router_deprecated.get("/{photo_id}/comments",
                    response_model=list[comment.CommentResponseShort],
                    dependencies=None,
                    status_code=status.HTTP_200_OK
@@ -197,7 +203,7 @@ async def show_comments(
     return result
 
 
-@router_photos.post("/{photo_id}/comments",
+@router_deprecated.post("/{photo_id}/comments",
                     response_model=comment.CommentResponseShort,
                     dependencies=None,
                     status_code=status.HTTP_201_CREATED
@@ -223,7 +229,7 @@ async def add_comment(
     return result
 
 
-@router_photos.put("/{photo_id}/comment/{comment_id}",
+@router_deprecated.put("/{photo_id}/comment/{comment_id}",
                    response_model=None,
                    dependencies=None,
                    status_code=None
@@ -268,7 +274,7 @@ async def edit_comment(
     return result
 
 
-@router_photos.delete("/{photo_id}/comment/{comment_id}",
+@router_deprecated.delete("/{photo_id}/comment/{comment_id}",
                       response_model=None,
                       dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
                       status_code=status.HTTP_204_NO_CONTENT
@@ -302,12 +308,12 @@ async def delete_comment(
 
 
 # ================================================================================================================
-# comments section
+# rating
 # ================================================================================================================
 
 
 
-@router_photos.post("/{photo_id}/rating",
+@router_deprecated.post("/{photo_id}/rating",
                     response_model=rating.RateResponseSchema,
                     dependencies=None,
                     status_code=status.HTTP_201_CREATED
@@ -344,7 +350,7 @@ async def add_rate(
 
 
 
-@router_photos.delete("/{photo_id}/rating/{username}",
+@router_deprecated.delete("/{photo_id}/rating/{username}",
                       response_model=None,
                       dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
                       status_code=status.HTTP_204_NO_CONTENT
@@ -377,7 +383,7 @@ async def delete_rate(
     return result
 
 
-@router_photos.get("/{photo_id}/rating",
+@router_deprecated.get("/{photo_id}/rating",
                    response_model=None,
                    dependencies=None,
                    status_code=status.HTTP_200_OK
