@@ -19,4 +19,4 @@ OPERATION_FORBIDDEN = "Operation forbidden"
 
 ALREADY_SET = "Already set"
 RATING_NOT_SET = "User not found or rating not set"
-
+TRANSFORMED_PHOTOS_NOT_FOUND = "Transformed photos not found"

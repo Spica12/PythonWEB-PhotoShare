@@ -17,26 +17,32 @@ class CloudinaryService:
             api_key=config.CLOUDINARY_API_KEY,
             api_secret=config.CLOUDINARY_API_SECRET,
             # Use HTTPS with TLS encryption
-            secure=True
+            secure=True,
         )
 
     def upload_photo(self, file: UploadFile, user: UserModel):
         folder = f"photoshare/{user.id}"
-        result = cloudinary.uploader.upload(
-            file.file, folder=folder, overwrite=True
-        )
+        result = cloudinary.uploader.upload(file.file, folder=folder, overwrite=True)
         public_id = result["public_id"]
 
-        result_url = cloudinary.CloudinaryImage(public_id).build_url(version=result.get("version"))
+        result_url = cloudinary.CloudinaryImage(public_id).build_url(
+            version=result.get("version")
+        )
 
         return result_url, public_id
 
     def destroy_photo(self, public_id: str):
-        result = cloudinary.uploader.destroy(
-            public_id, invalidate=True
-        )
+        result = cloudinary.uploader.destroy(public_id, invalidate=True)
 
         return result
+
+    def get_transformed_photo_url(self, public_id: str, transformation: dict):
+        transformed_url = cloudinary.CloudinaryImage(public_id).build_url(
+            transformation=transformation
+        )
+        print(transformed_url)
+
+        return transformed_url
 
 
 #     def get_asset_info(self, public_id):
