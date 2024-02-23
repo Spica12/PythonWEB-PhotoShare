@@ -14,7 +14,7 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema, PhotoTransformSchema
 
 
 # services
@@ -135,6 +135,65 @@ async def delete_photo(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
 
+@router_photos.get(
+    "/{photo_id}/crop",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def crop_photo(
+        photo_id: int,
+        width: int = Query(None, ge=1, le=1000, description="Width of the photo"),
+        height: int = Query(None, ge=1, le=1000, description="Height of the photo"),
+        crop: str = Query(None, regex="^(fill|fit|scale)$", description="Crop of the photo"),
+        format: str = Query(None, regex="^(jpg|png)$", description="Format of the photo"),
+        db: AsyncSession = Depends(get_db),
+        current_user: UserModel = Depends(auth_service.get_current_user)
+):
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    transformation = {}
+    if width:
+        transformation['width'] = width
+    if height:
+        transformation['height'] = height
+    if crop:
+        transformation['crop'] = crop
+    if format:
+        transformation['format'] = format
+
+    transform_photo_url = CloudinaryService().get_transformed_photo_url(public_id=photo.public_id, transformation=transformation)
+
+    return {"transformed_photo_url": transform_photo_url}
+
+
+@router_photos.post(
+    "/{photo_id}/transform",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def transform_photo(
+    photo_id: int,
+    transformation: PhotoTransformSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    transform_photo_url = CloudinaryService().get_transformed_photo_url(
+        public_id=photo.public_id, transformation=transformation.model_dump()
+    )
+
+    return {"transformed_photo_url": transform_photo_url}
 
 
 @router_photos.put(
@@ -306,7 +365,6 @@ async def delete_comment(
 # ================================================================================================================
 
 
-
 @router_photos.post("/{photo_id}/rating",
                     response_model=rating.RateResponseSchema,
                     dependencies=None,
@@ -341,7 +399,6 @@ async def add_rate(
         )
 
     return result
-
 
 
 @router_photos.delete("/{photo_id}/rating/{username}",
