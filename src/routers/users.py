@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
 from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
-from src.models.users import UserModel
+
+from src.models.users import UserModel, Roles
 from src.services.auth import AuthService
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
@@ -12,8 +13,8 @@ router_users = APIRouter(prefix="/users", tags=["Users"])
 
 @router_users.get("/my_profile", response_model=UserResponse)
 async def get_current_user(
-    user: UserModel = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
+        user: UserModel = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db),
 ):
     """
     Endpoint to retrieve the information of the currently authenticated user.
@@ -27,10 +28,9 @@ async def get_current_user(
 
 @router_users.get("/{username}", response_model=UserResponse)
 async def get_user(
-    username: str,
-    db: AsyncSession = Depends(get_db),
-    auth_service: AuthService = Depends(),
-    user: UserModel = Depends(auth_service.get_current_user),
+        username: str,
+        db: AsyncSession = Depends(get_db),
+        auth_service: AuthService = Depends(),
 ):
     """
     Endpoint to retrieve the profile information of a specific user by username.
@@ -44,9 +44,8 @@ async def get_user(
 
 
 @router_users.put(
-    "/{username}", response_model=None, dependencies=None, status_code=None
-)
-async def update_user(db: AsyncSession = Depends(get_db)):
+    "/{username}/ban", response_model=bool)
+async def ban_user(username: str, db: AsyncSession = Depends(get_db)):
     """
     Method put for username only if admin. Depends will be later.
 
@@ -55,15 +54,13 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    pass
+    await auth_service.ban_user(username, db)
+    return True
 
 
-
-
-@router_users.put(
-    "/my_profile", response_model=None, dependencies=None, status_code=None
-)
-async def update_current_user():
+@router_users.put("/my_profile", summary="Change password for a logged in user")
+async def update_current_user(user_change_password_body: UserUpdate, user: UserModel = Depends(auth_service.get_current_user),
+                              db: AsyncSession = Depends(get_db)):
     """
     Show profile of current user. Depends will be later.
 
@@ -71,4 +68,12 @@ async def update_current_user():
 
     Need model with all fields excluded is_active, role
     """
-    pass
+    try:
+        auth_service.update_user(user.email, user_change_password_body.new_password, db)
+        return {"result": f"{user.username}, your password has been updated!"}
+    except ValueError as e:
+        raise HTTPException(
+            status_code=400, detail=f"{e}")
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"An unexpected error occurred. Report this message to support: {e}")

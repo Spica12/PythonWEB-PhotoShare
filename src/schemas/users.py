@@ -15,14 +15,14 @@ class UserSchema(BaseModel):
 
 class UserResponse(BaseModel):
     """Pydantic model for serializing user data in responses."""
-    id: uuid.UUID
+    # id: uuid.UUID
     username: str
     email: EmailStr
     avatar: str | None
     role: Roles
     # picture_count: Optional[int]
-    confirmed: bool
-    is_active: bool
+    # confirmed: bool
+    # is_active: bool
     created_at: datetime
 
     class Config:
@@ -42,7 +42,7 @@ class AnotherUsers(BaseModel):
     """Pydantic model for serializing simplified user data in responses."""
     username: str
     email: EmailStr
-    avatar: HttpUrl | None
+    avatar: str | None
     role: Roles
     picture_count: Optional[int]
     created_at: datetime

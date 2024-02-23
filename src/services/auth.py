@@ -6,13 +6,14 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+from sqlalchemy import select
 
 from src.models.users import UserModel
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
 from src.repositories.users import UserRepo
-from src.schemas.users import UserSchema
+from src.schemas.users import UserSchema, UserUpdate
 
 
 class AuthService:
@@ -50,7 +51,7 @@ class AuthService:
     #     return user
 
     async def get_current_user(
-        self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
+            self, token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)
     ):
         credentials_exception = HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,6 +135,33 @@ class AuthService:
 
     async def confirmed_email(self, user: UserModel, db: AsyncSession):
         await UserRepo(db).confirmed_email(user)
+
+    async def update_user(self, email: str, new_password: str, db: AsyncSession):
+        try:
+            user = await db.execute(select(UserModel).filter(UserModel.email == email))
+            user = user.unique().scalar_one_or_none()
+            if user:
+                user.password = auth_service.get_password_hash(new_password)
+                await db.commit()
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(e)
+            return False
+
+    async def ban_user(self, username: str, db: AsyncSession):
+        stmt = select(UserModel).filter_by(username=username)
+        user = await db.execute(stmt)
+        user = user.scalar_one_or_none()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND
+            )
+        else:
+            user.is_active = False
+            await db.commit()
+            return True
 
 
 auth_service = AuthService()
