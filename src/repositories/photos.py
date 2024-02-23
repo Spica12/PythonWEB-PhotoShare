@@ -2,7 +2,7 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.photos import PhotoModel
+from src.models.photos import PhotoModel, TransformedImageLinkModel
 from src.models.users import UserModel
 
 
@@ -57,3 +57,19 @@ class PhotoRepo:
         await self.db.refresh(photo)
 
         return photo
+
+    async def add_transformed_photo_to_db(self, photo_id: int, image_url: str):
+        new_transformed_photo = TransformedImageLinkModel(
+            photo_id=photo_id,
+            image_url=image_url
+        )
+        self.db.add(new_transformed_photo)
+        await self.db.commit()
+        await self.db.refresh(new_transformed_photo)
+        
+        return new_transformed_photo
+
+    async def get_tranformed_photo_by_photo_id(self, photo_id: int):
+        stmt = select(TransformedImageLinkModel).filter_by(photo_id=photo_id)
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
