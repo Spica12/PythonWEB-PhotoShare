@@ -28,9 +28,7 @@ class PhotoRepo:
     def __init__(self, db):
         self.db: AsyncSession = db
 
-    async def add_photo(
-        self, user: UserModel, public_id: str, photo_url: str, description: str
-    ) -> PhotoModel:
+    async def add_photo(self, user: UserModel, public_id: str, photo_url: str, description: str) -> PhotoModel:
         new_photo = PhotoModel(
             public_id=public_id,
             image_url=photo_url,
@@ -40,7 +38,6 @@ class PhotoRepo:
         self.db.add(new_photo)
         await self.db.commit()
         await self.db.refresh(new_photo)
-
         return new_photo
 
     async def get_all_photos(self, skip: int, limit: int):
@@ -79,7 +76,6 @@ class PhotoRepo:
         self.db.add(new_transformed_photo)
         await self.db.commit()
         await self.db.refresh(new_transformed_photo)
-
         return new_transformed_photo
 
     async def get_tranformed_photo_by_photo_id(self, photo_id: int):
@@ -107,6 +103,20 @@ class PhotoRepo:
                 .filter(PhotoModel.id.isnot(None))
                 .offset(skip)
                 .limit(limit))
-
         result = await self.db.execute(stmt)
         return result
+
+    async def get_photo_page(self, photo_id: int, skip: int, limit: int):
+        # todo add tags
+        stmt = (select(PhotoModel.id,
+                       PhotoModel.image_url,
+                       PhotoModel.description,
+                       UserModel.username,
+                       RatingModel.value)
+                .select_from(UserModel)
+                .join(PhotoModel, isouter=True)
+                .join(RatingModel, isouter=True)
+                .filter(PhotoModel.id == photo_id))
+
+        result = await self.db.execute(stmt)
+        return result.first()

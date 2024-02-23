@@ -19,3 +19,9 @@ class CommentResponseShort(CommentSchema):
 
     class Config:
         orm_mode = True
+
+
+class CommentResponseIntegratedSchema(CommentSchema):
+    # todo change uid by username
+    user_id: UUID
+    created_at: datetime

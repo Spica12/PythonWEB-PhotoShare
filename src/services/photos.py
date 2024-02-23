@@ -5,6 +5,8 @@ import logging
 from src.models.photos import PhotoModel
 from src.models.users import UserModel
 from src.repositories.photos import PhotoRepo
+from src.repositories.comments import CommentRepo
+
 
 
 class PhotoService:
@@ -51,12 +53,20 @@ class PhotoService:
 
     async def get_all_photo_per_page(self, skip: int, limit: int):
         query = await self.repo.get_photo_object_with_params(skip, limit)
-
-        # list_of items = [i.telegram_id for i in db_article.sent_to_user]
-        # for objects in photos:
         result = []
         for photo in query:
             logging.info(f"{photo._asdict()}")
             result.append(photo._asdict())
+        return result
 
+    async def get_one_photo_page(self, photo_id: int, skip: int, limit: int):
+        result = await self.repo.get_photo_page(photo_id, skip, limit)
+        if result is not None:
+            result = result._asdict()
+            comments = await CommentRepo(self.repo.db).get_all_comments(photo_id, skip, limit)
+            logging.info(f"{comments}")
+
+            result["comments"] = comments
+
+        logging.info(f"{result}")
         return result

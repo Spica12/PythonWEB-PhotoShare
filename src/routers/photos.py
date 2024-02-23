@@ -1,19 +1,9 @@
 from fastapi import (
-    APIRouter,
-    Depends,
-    File,
-    Form,
-    HTTPException,
-    Path,
-    Query,
-    Request,
-    UploadFile,
-    status,
+    APIRouter, Depends, HTTPException, Path, Query, Request, status,
+    File, Form, UploadFile
 )
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union
-import logging
 
 # config
 from src.conf import messages
@@ -26,8 +16,9 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema, ImagePageResponseShortSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema
 from src.schemas.transform import TransformRequestSchema
+from src.schemas.unified import ImagePageResponseShortSchema, ImagePageResponseFullSchema
 
 # services
 from src.services.auth import auth_service
@@ -42,6 +33,8 @@ from src.services.qr import QRCodeService
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
 # TODO remove in release
+from typing import Union
+import logging
 # deprecated routers.
 router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
 
@@ -71,13 +64,12 @@ async def show_photos(
     Show for all users, unregistered too
     """
     photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
-    logging.info(f"{photos}")
     return photos
 
 
 @router_photos.get(
     "/{photo_id}",
-    response_model=ImageResponseAfterCreateSchema,
+    response_model=ImagePageResponseFullSchema,
     dependencies=None,
     status_code=status.HTTP_200_OK,
 )
@@ -85,6 +77,7 @@ async def show_photo(
         photo_id: int,
         transformed_id: int | None = Query(default=None, ge=1),
         qr_code: bool = Query(default=False),
+        url: bool = Query(default=False),
         limit: int = Query(20, ge=20, le=100),
         skip: int = Query(0, ge=0),
         db: AsyncSession = Depends(get_db)
@@ -95,8 +88,26 @@ async def show_photo(
 
     Show for all users, unregistered too
     """
+    # todo use another response schema for transformed photos list
+    # show Photo with list of transformed photos urls
+    if transformed_id is not None:
+        photo = await PhotoService(db).get_photo_exists(photo_id)
+        if not photo:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+            )
+        transform_photos = await PhotoService(db).get_tranformed_photos_by_photo_id(photo_id)
+        if not transform_photos:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+            )
+        return transform_photos
 
-    photo = await PhotoService(db).get_photo_exists(photo_id)
+
+
+    # photo = await PhotoService(db).get_photo_exists(photo_id)
+    photo = await PhotoService(db).get_one_photo_page(photo_id, skip, limit)
     if not photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
@@ -159,34 +170,6 @@ async def delete_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
-
-
-@router_photos.get(
-    "/{photo_id}/transform",
-    response_model=None,
-    dependencies=None,
-    status_code=status.HTTP_200_OK,
-)
-async def get_transformed_photos(
-    photo_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
-):
-    photo = await PhotoService(db).get_photo_exists(photo_id)
-    if not photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
-        )
-    transform_photos = await PhotoService(db).get_tranformed_photos_by_photo_id(
-        photo_id
-    )
-    if not transform_photos:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
-        )
-
-    return transform_photos
 
 
 @router_photos.get(
