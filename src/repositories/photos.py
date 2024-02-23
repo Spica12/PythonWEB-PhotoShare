@@ -101,11 +101,12 @@ class PhotoRepo:
                        PhotoModel.description,
                        UserModel.username,
                        RatingModel.value)
-                .select_from(UserModel).
-                join(PhotoModel, isouter=True).
-                join(RatingModel, isouter=True).
-                offset(skip).
-                limit(limit))
+                .select_from(UserModel)
+                .join(PhotoModel, isouter=True)
+                .join(RatingModel, isouter=True)
+                .filter(PhotoModel.id.isnot(None))
+                .offset(skip)
+                .limit(limit))
 
         result = await self.db.execute(stmt)
         return result

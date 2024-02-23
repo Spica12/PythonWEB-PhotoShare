@@ -13,6 +13,7 @@ from fastapi import (
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
+import logging
 
 # config
 from src.conf import messages
@@ -70,6 +71,7 @@ async def show_photos(
     Show for all users, unregistered too
     """
     photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
+    logging.info(f"{photos}")
     return photos
 
 
