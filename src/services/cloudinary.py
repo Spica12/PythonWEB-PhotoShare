@@ -36,52 +36,45 @@ class CloudinaryService:
 
         return result
 
-    def get_transformed_photo_url(self, public_id: str, transformation: dict):
+    def get_transformed_photo_url(self, public_id: str, request_for_transformation: dict):
+        transformation = []
+        height = request_for_transformation['height']
+        width = request_for_transformation['width']
+        radius = request_for_transformation['radius']
+        angle = request_for_transformation['angle']
+
+        if request_for_transformation['zoom_on_face']:
+            transformation.append(self.zoom_on_face())
+        if request_for_transformation['rotate_photo']:
+            transformation.append(self.rotate_photo(angle))
+        if request_for_transformation['crop_photo']:
+            transformation.append(self.crop_photo(height, width))
+        if request_for_transformation['apply_max_radius']:
+            transformation.append(self.apply_max_radius())
+        if request_for_transformation['apply_radius']:
+            transformation.append(self.apply_radius(radius))
+        if request_for_transformation['apply_grayscale']:
+            transformation.append(self.apply_grayscale())
+
         transformed_url = cloudinary.CloudinaryImage(public_id).build_url(
             transformation=transformation
         )
-        print(transformed_url)
-
         return transformed_url
 
+    def zoom_on_face(self):
+        return {'gravity': 'face'}
 
-#     def get_asset_info(self, public_id):
-#         image_info = cloudinary.api.resource(public_id)
-#         print("****3. Get and use details of the image****\nUpload response:\n", json.dumps(image_info, indent=2), "\n")
+    def rotate_photo(self, angle: int):
+        return {'angle': angle}
 
-#         # Assign tags based on image width
-#         width = image_info.get("width", 0)
-#         if width > 900:
-#             self.update_tags(public_id, tags="large")
-#         elif width > 500:
-#             self.update_tags(public_id, tags="medium")
-#         else:
-#             self.update_tags(public_id, tags="small")
+    def crop_photo(self, height: int, width: int):
+        return {'height': height,'width': width, 'crop': 'crop'}
 
-#     def update_tags(self, public_id, tags):
-#         update_resp = cloudinary.api.update(public_id, tags=tags)
-#         print("New tag: ", update_resp["tags"], "\n")
+    def apply_radius(self, radius: int):
+        return {'radius': radius}
 
-#     def create_photo_tag(self, public_id, transformations):
-#         # Transform the image and create an image tag
-#         image_tag = cloudinary.CloudinaryImage(public_id).image(**transformations)
+    def apply_max_radius(self):
+        return {'radius': 'max'}
 
-#         # Log the image tag to the console
-#         print("****4. Transform the image****\nImage Tag: ", image_tag, "\n")
-
-# def main():
-#     cloudinary_service = CloudinaryService("cloud_name", "api_key", "api_secret")
-
-#     # Upload an image
-#     cloudinary_service.upload_photo("https://cloudinary-devs.github.io/cld-docs-assets/assets/images/butterfly.jpeg",
-#                                     public_id="quickstart_butterfly", unique_filename=False, overwrite=True)
-
-#     # Get and use details of the image
-#     cloudinary_service.get_asset_info("quickstart_butterfly")
-
-#     # Create photo tag with transformations
-#     transformations = {
-#         'radius': 'max',
-#         'effect': 'sepia'
-#     }
-#     cloudinary_service.create_photo_tag("quickstart_butterfly", transformations)
+    def apply_grayscale(self):
+        return {'effect': 'grayscale'}
