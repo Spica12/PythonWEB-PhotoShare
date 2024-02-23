@@ -49,25 +49,3 @@ class ImageResponseSchema(BaseModel):
     comments: Optional[List[str]] = []
 
 
-class PhotoTransformSchema(BaseModel):
-    """
-    Create an item with all the information:
-
-    - **width**: Width of the photo
-    - **description**: a long description
-    """
-    width: Optional[int] = Field(None, ge=1, le=1000, description="Width of the photo")
-    height: Optional[int] = Field(
-        None, ge=1, le=1000, description="Height of the photo"
-    )
-    crop: Optional[str] = Field(
-        None, pattern="^(fill|fit|scale)$", description="Crop of the photo"
-    )
-    format: Optional[str] = Field(
-        None, pattern="^(jpg|png)$", description="Format of the photo"
-    )
-    angle: Optional[int] = Field(None, ge=0, le=360, description="Angle of the photo")
-    gravity: Optional[str] = Field(
-        None, pattern="^(face)$",
-        description="Gravity of the photo"
-    )
