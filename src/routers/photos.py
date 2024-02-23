@@ -290,7 +290,8 @@ async def transform_photo(
         )
 
     transform_photo_url = CloudinaryService().get_transformed_photo_url(
-        public_id=photo.public_id, transformation=transformation.model_dump()
+        public_id=photo.public_id,
+        request_for_transformation=transformation.model_dump(),
     )
 
     new_transformered_photo = await PhotoService(db).add_transformed_photo_to_db(
