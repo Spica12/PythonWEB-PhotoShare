@@ -124,9 +124,12 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
 @router_auth.post("/password-reset", response_model=None)
 async def request_password_reset(password_reset_request: RequestEmail, db: AsyncSession = Depends(get_db)):
     try:
+        print("Before reset_password_and_notify_user")
         await auth_service.reset_password_and_notify_user(password_reset_request.email, db)
+        print("After reset_password_and_notify_user")
         return {"message": "Password reset request successful. Check your email for the new password."}
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
 

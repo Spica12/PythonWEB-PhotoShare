@@ -152,11 +152,16 @@ class AuthService:
             new_password = self.generate_random_password()
             hashed_password = self.get_password_hash(new_password)
 
-            # Update user's password in the database
-            await self.update_user_password(user.id, hashed_password, db)
+            try:
+                # Update user's password in the database
+                await self.update_user_password(user.id, hashed_password, db)
 
-            # Send password reset notification
-            await self.send_password_reset_notification(email, new_password)
+                # Send password reset notification
+                await self.send_password_reset_notification(email, new_password)
+            except Exception as e:
+                print(f"Error resetting password and notifying user: {e}")
+        else:
+            print(f"User with email {email} not found.")
 
     async def send_password_reset_notification(self, email, new_password):
         try:
@@ -180,11 +185,16 @@ class AuthService:
     async def update_user_password(self, user_id: UUID, new_password: str, db: AsyncSession):
         user = await self.get_user_by_id(user_id, db)
         if user:
-            hashed_password = self.get_password_hash(new_password)
-            user.password = hashed_password
-            user_repo = UserRepo(db)
+            try:
+                hashed_password = self.get_password_hash(new_password)
+                user.password = hashed_password
+                user_repo = UserRepo(db)
 
-            await user_repo.update_user(user)
+                await user_repo.update_user(user)
+            except Exception as e:
+                print(f"Error updating user password: {e}")
+        else:
+            print(f"User with ID {user_id} not found.")
 
 
 auth_service = AuthService()
