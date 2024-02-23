@@ -2,8 +2,25 @@ from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.photos import PhotoModel, TransformedImageLinkModel
+from src.models.photos import PhotoModel, TransformedImageLinkModel, RatingModel
 from src.models.users import UserModel
+
+
+# TODO Testing
+#
+import logging
+# logging rules
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler("test.log"),
+        # logging.StreamHandler()
+    ],
+)
+# logging.getLogger("pika").setLevel(logging.WARNING)
+#
+#
 
 
 class PhotoRepo:
@@ -26,16 +43,13 @@ class PhotoRepo:
 
         return new_photo
 
-    async def get_all_photos(
-        self, skip: int, limit: int
-    ):
+    async def get_all_photos(self, skip: int, limit: int):
         stmt = select(PhotoModel).offset(skip).limit(limit)
         result = await self.db.execute(stmt)
-        # check here. Pycharm:  Expected type 'list[PhotoModel]', got 'Sequence[PhotoModel]' instead
         return result.scalars().all()
 
-    # to check if the object exists or get one photo by id
     async def get_photo_from_db(self, photo_id: int):
+        # to check if the object exists or get one photo by id
         stmt = select(PhotoModel).filter_by(id=photo_id)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
@@ -55,7 +69,6 @@ class PhotoRepo:
     async def update_photo(self, photo: PhotoModel):
         await self.db.commit()
         await self.db.refresh(photo)
-
         return photo
 
     async def add_transformed_photo_to_db(self, photo_id: int, image_url: str):
@@ -80,3 +93,19 @@ class PhotoRepo:
         )
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_photo_object_with_params(self, skip: int, limit: int):
+        # todo add tags
+        stmt = (select(PhotoModel.id,
+                       PhotoModel.image_url,
+                       PhotoModel.description,
+                       UserModel.username,
+                       RatingModel.value)
+                .select_from(UserModel).
+                join(PhotoModel, isouter=True).
+                join(RatingModel, isouter=True).
+                offset(skip).
+                limit(limit))
+
+        result = await self.db.execute(stmt)
+        return result

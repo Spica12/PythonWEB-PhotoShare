@@ -4,6 +4,9 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
+from src.schemas.users import UserNameSchema
+from src.schemas.rating import RateSchema
+
 
 class ImageSchema(BaseModel):
     """Pydantic model for validating incoming picture data."""
@@ -47,5 +50,15 @@ class ImageResponseSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
     comments: Optional[List[str]] = []
+
+
+# todo ImageSchema
+# todo add tags
+class ImagePageResponseShortSchema(ImageUpdateSchema):
+    id: int
+    image_url: Optional[str]
+    username: Optional[str] #Optional[UserNameSchema]
+    value: Optional[int] #Optional[RateSchema]
+
 
 

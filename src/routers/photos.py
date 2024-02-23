@@ -25,9 +25,8 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema, ImagePageResponseShortSchema
 from src.schemas.transform import TransformRequestSchema
-
 
 # services
 from src.services.auth import auth_service
@@ -41,6 +40,10 @@ from src.services.qr import QRCodeService
 # routers
 router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
+# TODO remove in release
+# deprecated routers.
+router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
+
 # ================================================================================================================
 # photos section
 # ================================================================================================================
@@ -48,9 +51,9 @@ router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
 @router_photos.get(
     "/",
-    response_model=list[ImageResponseAfterCreateSchema],
+    response_model=list[ImagePageResponseShortSchema],
     dependencies=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_200_OK
 )
 async def show_photos(
     limit: int = Query(10, ge=10, le=100),
@@ -58,12 +61,15 @@ async def show_photos(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Show all images with query parameters.
-    Show for all users, unregistered too
-    All depends will be later
-    """
-    photos = await PhotoService(db).get_all_photos(skip, limit)
+    Show all photos. Pagination in query parameters:
+        limit = limit photos per page
+        skip = skip images from previous pages.
+            Example: when limit = 10 photos per page,
+            for the 3d page skip = 20.
 
+    Show for all users, unregistered too
+    """
+    photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
     return photos
 
 
@@ -73,14 +79,21 @@ async def show_photos(
     dependencies=None,
     status_code=status.HTTP_200_OK,
 )
-async def show_photo(photo_id: int, db: AsyncSession = Depends(get_db)):
+async def show_photo(
+        photo_id: int,
+        transformed_id: int | None = Query(default=None, ge=1),
+        qr_code: bool = Query(default=False),
+        limit: int = Query(20, ge=20, le=100),
+        skip: int = Query(0, ge=0),
+        db: AsyncSession = Depends(get_db)
+):
     """
-    Show image by id
+    Show photo by id
+    Pagination in query parameters for comments.
+
     Show for all users, unregistered too
-
-    All depends will be later
-
     """
+
     photo = await PhotoService(db).get_photo_exists(photo_id)
     if not photo:
         raise HTTPException(
@@ -332,11 +345,12 @@ async def update_photo(
 
 
 # ================================================================================================================
-# comments section
+# TODO REMOVE EVERYTHING BELOW THIS TEXT
+#  DEPRECATED
 # ================================================================================================================
 
 
-@router_photos.get(
+@router_deprecated.get(
     "/{photo_id}/comments",
     response_model=list[comment.CommentResponseShort],
     dependencies=None,
@@ -364,7 +378,7 @@ async def show_comments(
     return result
 
 
-@router_photos.post(
+@router_deprecated.post(
     "/{photo_id}/comments",
     response_model=comment.CommentResponseShort,
     dependencies=None,
@@ -393,7 +407,7 @@ async def add_comment(
     return result
 
 
-@router_photos.put(
+@router_deprecated.put(
     "/{photo_id}/comment/{comment_id}",
     response_model=None,
     dependencies=None,
@@ -447,7 +461,7 @@ async def edit_comment(
     return result
 
 
-@router_photos.delete(
+@router_deprecated.delete(
     "/{photo_id}/comment/{comment_id}",
     response_model=None,
     dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
@@ -490,7 +504,7 @@ async def delete_comment(
 # ================================================================================================================
 
 
-@router_photos.post(
+@router_deprecated.post(
     "/{photo_id}/rating",
     response_model=rating.RateResponseSchema,
     dependencies=None,
@@ -529,7 +543,7 @@ async def add_rate(
     return result
 
 
-@router_photos.delete(
+@router_deprecated.delete(
     "/{photo_id}/rating/{username}",
     response_model=None,
     dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
@@ -561,7 +575,7 @@ async def delete_rate(
     return result
 
 
-@router_photos.get(
+@router_deprecated.get(
     "/{photo_id}/rating",
     response_model=None,
     dependencies=None,

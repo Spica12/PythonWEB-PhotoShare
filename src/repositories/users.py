@@ -7,6 +7,8 @@ from src.dependencies.database import get_db
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
 from src.schemas.users import UserSchema
 
+import logging
+
 
 class UserRepo:
 
@@ -29,8 +31,14 @@ class UserRepo:
 
     async def get_user_by_email(self, email: str):
         stmt = select(UserModel).filter_by(email=email)
+
+        logging.info(f"SQL STMT: {stmt}")
+
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
+
+        logging.info(f"SQL result: {user}")
+
 
         return user
 
