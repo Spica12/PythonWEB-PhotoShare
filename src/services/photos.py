@@ -45,3 +45,10 @@ class PhotoService:
         tranformed_photos = await self.repo.get_tranformed_photo_by_photo_id(photo_id)
 
         return tranformed_photos
+
+    async def get_tranformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
+        tranformed_photo = await self.repo.get_tranformed_photo_by_transformed_id(
+            photo_id, transform_id
+        )
+
+        return tranformed_photo

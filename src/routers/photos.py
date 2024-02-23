@@ -6,9 +6,11 @@ from fastapi import (
     HTTPException,
     Path,
     Query,
+    Request,
     UploadFile,
     status,
 )
+from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Union
 
@@ -210,6 +212,101 @@ async def get_transformed_photos(
         )
 
     return transform_photos
+
+
+@router_photos.get(
+    "/{photo_id}/transformed/{transform_id}/url",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
+async def get_transformed_photo(
+    photo_id: int,
+    transform_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    transform_photo = await PhotoService(db).get_tranformed_photo_by_transformed_id(
+        photo_id, transform_id
+    )
+    if not transform_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+        )
+
+    return {
+        "transformed_photo_url": transform_photo.image_url,
+    }
+
+
+@router_photos.get(
+    "/{photo_id}/transformed/{transform_id}/qrcode",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
+async def get_transformed_photo(
+    photo_id: int,
+    transform_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    transform_photo = await PhotoService(db).get_tranformed_photo_by_transformed_id(
+        photo_id, transform_id
+    )
+    if not transform_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+        )
+
+    response = RedirectResponse(url=transform_photo.image_url)
+
+    return response
+
+
+@router_photos.post(
+    "/{photo_id}/transformed/{transform_id}/qrcode",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_200_OK,
+)
+async def create_qr_code_for_transformed_photo(
+    photo_id: int,
+    transform_id: int,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    transform_photo = await PhotoService(db).get_tranformed_photo_by_transformed_id(
+        photo_id, transform_id
+    )
+    if not transform_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+        )
+    transform_photo_url = f"{str(request.base_url)}api/photos/{photo_id}/transformed/{transform_id}/qrcode"
+
+    transformed_qr_code = QRCodeService().generate_qr_code(transform_photo_url)
+
+    return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
 
 
 @router_photos.post(
@@ -534,7 +631,7 @@ async def show_rates(
     return result
 
 
-# @router.post("/create_image_link/")
+# @router_photos.post("/create_image_link/")
 # def create_image_link(url: str, db: Session = Depends(get_db)):
 #     qr_code_service = QRCodeService()
 
@@ -554,7 +651,7 @@ async def show_rates(
 #     return {"image_link_id": new_image_link.id}
 
 
-# @router.get("/get_qr_code/{image_link_id}")
+# @router_photos.get("/get_qr_code/{image_link_id}")
 # def get_qr_code(image_link_id: int, db: Session = Depends(get_db)):
 #     # Get QR code from the database
 #     image_link = db.query(ImageLink).filter(ImageLink.id == image_link_id).first()
