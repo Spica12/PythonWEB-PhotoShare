@@ -150,6 +150,7 @@ async def crop_photo(
         db: AsyncSession = Depends(get_db),
         current_user: UserModel = Depends(auth_service.get_current_user)
 ):
+    # Need to choose delete this route
     photo = await PhotoService(db).get_photo_exists(photo_id)
     if not photo:
         raise HTTPException(
