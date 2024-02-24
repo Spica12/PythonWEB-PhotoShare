@@ -36,3 +36,22 @@ class EmailService:
 
         except ConnectionErrors as err:
             print(err)
+
+    async def send_password_reset_notification(self, email, new_password):
+        try:
+            # Generate a new password reset token
+            token_reset = auth_service.create_email_token({"sub": email})
+
+            # Prepare the email message
+            message = MessageSchema(
+                subject="Password Reset",
+                recipients=[email],
+                template_body={"new_password": new_password, "token_reset": token_reset},
+                subtype=MessageType.html
+            )
+
+            # Send the email using EmailService
+            await self.fm.send_message(message, template_name="password_reset_email.html")
+
+        except ConnectionErrors as err:
+            print(err)

@@ -19,6 +19,10 @@ from src.repositories.users import UserRepo
 from src.schemas.users import UserSchema
 
 
+
+
+
+
 class AuthService:
     pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
     SECRET_KEY = config.SECRET_KEY_JWT
@@ -145,42 +149,21 @@ class AuthService:
         alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return ''.join(secrets.choice(alphabet) for i in range(length))
 
-    async def reset_password_and_notify_user(self, email: str, db: AsyncSession):
+    async def reset_password_and_notify_user(self, email: str, new_password: str, db: AsyncSession):
         user = await self.get_user_by_email(email, db)
 
         if user:
-            new_password = self.generate_random_password()
             hashed_password = self.get_password_hash(new_password)
+            await self.update_user_password(user.id, hashed_password, db)
 
+            # Send password reset notification using EmailService
             try:
-                # Update user's password in the database
-                await self.update_user_password(user.id, hashed_password, db)
-
-                # Send password reset notification
-                await self.send_password_reset_notification(email, new_password)
-            except Exception as e:
-                print(f"Error resetting password and notifying user: {e}")
+                email_service = EmailService()
+                await email_service.send_password_reset_notification(email, new_password)
+            except Exception as err:
+                print(f"Error sending password reset notification: {err}")
         else:
-            print(f"User with email {email} not found.")
-
-    async def send_password_reset_notification(self, email, new_password):
-        try:
-            # Generate a new password reset token
-            token_reset = auth_service.create_email_token({"sub": email})
-
-            # Prepare the email message
-            message = MessageSchema(
-                subject="Password Reset",
-                recipients=[email],
-                template_body={"new_password": new_password, "token_reset": token_reset},
-                subtype=MessageType.html
-            )
-
-            # Send the email using EmailService
-            await EmailService().fm.send_message(message, template_name="password_reset_email.html")
-
-        except ConnectionErrors as err:
-            print(err)
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
 
     async def update_user_password(self, user_id: UUID, new_password: str, db: AsyncSession):
         user = await self.get_user_by_id(user_id, db)
