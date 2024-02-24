@@ -2,10 +2,10 @@ from typing import List
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.photos import PhotoModel, TagModel, PhotoTagModel
+from src.models.photos import TagModel, PhotoTagModel
 
 
-class TagsRepo:
+class TagRepo:
 
     def __init__(self, db):
         self.db: AsyncSession = db
