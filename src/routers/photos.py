@@ -1,3 +1,4 @@
+from copy import copy
 from fastapi import (
     APIRouter,
     Depends,
@@ -12,7 +13,8 @@ from fastapi import (
 )
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Union
+from typing import List, Union
+from src.services.tags import TagService
 
 # config
 from src.conf import messages
@@ -25,7 +27,7 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema, ImageSchema
 from src.schemas.transform import TransformRequestSchema
 
 
@@ -97,18 +99,37 @@ async def show_photo(photo_id: int, db: AsyncSession = Depends(get_db)):
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_photo(
-    file: UploadFile = File(),
-    description: str | None = Form("", description="Add description to your photo"),
+    body: ImageSchema = Depends(),
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
+    if body.tags:
+        list_tags = body.tags.split(",")
+        body.tags = [tag.strip() for tag in list_tags]
+        if len(body.tags) > 5:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS
+            )
+    else:
+        body.tags = []
     # Upload photo and get url
-    photo_cloud_url, public_id = CloudinaryService().upload_photo(file, current_user)
-    photo = await PhotoService(db).add_photo(
-        current_user, public_id, photo_cloud_url, description
+    photo_cloud_url, public_id = CloudinaryService().upload_photo(
+        body.file, current_user
     )
+    # Add new_photo to db
+    new_photo = await PhotoService(db).add_photo(
+        current_user,
+        public_id,
+        photo_cloud_url,
+        body.description,
+    )
+    # Without this, new_photo isn't returned. I don't know why.
+    new_photo_copy = copy(new_photo)
+    # If we have tags then we need to add them
+    if body.tags:
+        await TagService(db).add_tags_to_photo(new_photo_copy.id, body.tags)
 
-    return photo
+    return new_photo_copy
 
 
 @router_photos.delete(
