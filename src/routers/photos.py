@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from fastapi import (
     APIRouter,
     Depends,
@@ -117,19 +117,22 @@ async def upload_photo(
         body.file, current_user
     )
     # Add new_photo to db
-    new_photo = await PhotoService(db).add_photo(
-        current_user,
-        public_id,
-        photo_cloud_url,
-        body.description,
+    new_photo = deepcopy(
+        await PhotoService(db).add_photo(
+            current_user,
+            public_id,
+            photo_cloud_url,
+            body.description,
+
+        )
     )
     # Without this, new_photo isn't returned. I don't know why.
-    new_photo_copy = copy(new_photo)
+    # new_photo_copy = copy(new_photo)
     # If we have tags then we need to add them
     if body.tags:
-        await TagService(db).add_tags_to_photo(new_photo_copy.id, body.tags)
+        await TagService(db).add_tags_to_photo(new_photo.id, body.tags)
 
-    return new_photo_copy
+    return new_photo
 
 
 @router_photos.delete(
