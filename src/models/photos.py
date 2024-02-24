@@ -21,14 +21,25 @@ class PhotoModel(Base):
     updated_at: Mapped[datetime] = mapped_column(
         "updated_at", DateTime, default=func.now(), onupdate=func.now()
     )
+    transformed_images: Mapped[list["TransformedImageLinkModel"]] = relationship(
+        "TransformedImageLinkModel", cascade="all, delete-orphan"
+    )
+    comments: Mapped[list["CommentModel"]] = relationship(
+        "CommentModel", cascade="all, delete-orphan"
+    )
+    ratings: Mapped[list["RatingModel"]] = relationship(
+        "RatingModel", cascade="all, delete-orphan"
+    )
 
 
 class TransformedImageLinkModel(Base):
     __tablename__ = "transformed_images"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     image_url: Mapped[str] = mapped_column(String(255), nullable=True)
-    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
-    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="transformed_images")
+    photo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("photos.id", ondelete="CASCADE"), nullable=False
+    )
+    photo: Mapped[PhotoModel] = relationship("PhotoModel")
     created_at: Mapped[datetime] = mapped_column(
         "created_at", DateTime, default=func.now()
     )
@@ -43,7 +54,9 @@ class TagModel(Base):
 class PhotoTagModel(Base):
     __tablename__ = "photos_tags"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
+    photo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("photos.id"), nullable=False
+    )
     photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="tags")
     tag_id: Mapped[int] = mapped_column(Integer, ForeignKey("tags.id"), nullable=False)
     tag: Mapped[TagModel] = relationship("TagModel", backref="photos")
@@ -59,8 +72,10 @@ class CommentModel(Base):
     __tablename__ = "comments"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     content: Mapped[str] = mapped_column(String(255), nullable=False)
-    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
-    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="comments")
+    photo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("photos.id", ondelete="CASCADE"), nullable=False
+    )
+    photo: Mapped[PhotoModel] = relationship("PhotoModel")
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     user: Mapped[UserModel] = relationship("UserModel", backref="comments")
     created_at: Mapped[datetime] = mapped_column(
@@ -75,8 +90,10 @@ class RatingModel(Base):
     __tablename__ = "ratings"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     value: Mapped[int] = mapped_column(Integer, nullable=False)
-    photo_id: Mapped[int] = mapped_column(Integer, ForeignKey("photos.id"), nullable=False)
-    photo: Mapped[PhotoModel] = relationship("PhotoModel", backref="ratings")
+    photo_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("photos.id", ondelete="CASCADE"), nullable=False
+    )
+    photo: Mapped[PhotoModel] = relationship("PhotoModel")
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("users.id"), nullable=False)
     user: Mapped[UserModel] = relationship("UserModel", backref="ratings")
     created_at: Mapped[datetime] = mapped_column(
