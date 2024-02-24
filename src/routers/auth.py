@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends, BackgroundTasks, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm, HTTPBearer
 from src.models.users import UserModel
@@ -76,8 +77,8 @@ async def login(
 
 
 @router_auth.get("/logout")
-async def logout():
-    pass
+async def logout(current_user: UserModel = Depends(auth_service.logout_service)):
+    return RedirectResponse(status_code=status.HTTP_302_FOUND, url="/")
 
 
 @router_auth.get("/refresh", response_model=TokenSchema)
