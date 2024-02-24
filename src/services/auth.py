@@ -56,11 +56,15 @@ class AuthService:
     #     user = await UserRepo(db).get_user_by_email(email)
     #     return user
 
+    async def check_access_token_blacklist(self, token, db: AsyncSession):
+        blacklist = await UserRepo(db).get_token_blacklist(token)
+        return blacklist
+
     async def extract_token_data(self, token, db: AsyncSession):
         # double usage of code, separate func
         # check if we can use token (not in blacklist)
         # if it is - raise 401.
-        blacklist = await UserRepo(db).get_token_blacklist(token)
+        blacklist = await self.check_access_token_blacklist(token, db)
         if blacklist is not None:
             raise self.credentials_exception
 
