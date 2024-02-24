@@ -65,8 +65,6 @@ class PhotoService:
             result = result._asdict()
             comments = await CommentRepo(self.repo.db).get_all_comments(photo_id, skip, limit)
             logging.info(f"{comments}")
-
             result["comments"] = comments
-
         logging.info(f"{result}")
         return result
