@@ -8,8 +8,6 @@ from src.models.users import BlackListModel, Roles, TokenModel, UserModel
 # schemas
 from src.schemas.users import UserSchema
 
-import logging
-
 
 class UserRepo:
     def __init__(self, db):
@@ -29,14 +27,8 @@ class UserRepo:
 
     async def get_user_by_email(self, email: str):
         stmt = select(UserModel).filter_by(email=email)
-
-        logging.info(f"SQL STMT: {stmt}")
-
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
-
-        logging.info(f"SQL result: {user}")
-
         return user
 
     async def create_user(self, body: UserSchema):

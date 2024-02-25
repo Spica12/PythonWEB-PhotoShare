@@ -6,42 +6,47 @@ from fastapi import File, UploadFile
 from pydantic import BaseModel, Field
 
 
-class ImageSchema(BaseModel):
-    """Pydantic model for validating incoming picture data."""
-    file: UploadFile = File()
+class ImageUpdateSchema(BaseModel):
     description: Optional[str] = Field(max_length=255)
+
+
+class ImageSchema(ImageUpdateSchema):
+    file: UploadFile = File()
     tags: Optional[str] = None
 
 
-class ImageUpdateSchema(BaseModel):
-    """Pydantic model for validating incoming picture update data."""
+class ImageBaseResponseSchema(BaseModel):
+    id: int
+    image_url: str
+    description: Optional[str] = None
 
-    description: Optional[str] = Field(max_length=255)
+
+class ImageResponseRatingSchema(ImageBaseResponseSchema):
+    rating: Optional[int] = 0
 
 
-class ImageResponseAfterCreateSchema(BaseModel):
-    """Pydantic model for serializing picture data after creating in responses."""
+class ImageResponseTagsSchema(ImageBaseResponseSchema):
+    tags: Optional[List[str]] = []
 
+
+class ImageExtendedResponseSchema(ImageResponseRatingSchema):
+    tags: Optional[List[str]] = []
+    created_at: datetime
+
+
+class ImageResponseAfterCreateSchema(ImageBaseResponseSchema):
     # TODO
     # This is test schema. Need to think how to do better
-    id: int
     public_id: str
-    image_url: str
     user_id: uuid.UUID
-    description: Optional[str] = None
     created_at: datetime
-    updated_at: datetime
+    # updated_at: datetime
 
 
-class ImageResponseSchema(BaseModel):
-    """Pydantic model for serializing picture data in responses."""
-
+class ImageResponseSchema(ImageExtendedResponseSchema):
     user_id: uuid.UUID
-    id: int
-    image_url: str
-    description: Optional[str] = None
-    tags: Optional[List[str]] = []
-    rating: Optional[int] = 0
-    created_at: datetime
+    # tags: Optional[List[str]] = []
+    # rating: Optional[int] = 0
+    # created_at: datetime
     updated_at: datetime
     comments: Optional[List[str]] = []

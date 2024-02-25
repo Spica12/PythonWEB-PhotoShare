@@ -29,7 +29,7 @@ app.add_middleware(
 
 @app.get("/")
 def index():
-    return {"message": "Python WEB group #1 project"}
+    return {"message": "Main page: Python WEB group #1 project"}
     
 
 @app.get("/api/healthchecker")
