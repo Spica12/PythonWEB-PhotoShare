@@ -17,20 +17,20 @@ class ImageSchema(ImageUpdateSchema):
 
 class ImageBaseResponseSchema(BaseModel):
     id: int
-    image_url: str
-    description: Optional[str] = None
+    image_url: str | None
+    description: Optional[str] | None
 
 
 class ImageResponseRatingSchema(ImageBaseResponseSchema):
-    rating: Optional[int] = 0
+    rating: Optional[float] | None
 
 
 class ImageResponseTagsSchema(ImageBaseResponseSchema):
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str | None]]
 
 
 class ImageExtendedResponseSchema(ImageResponseRatingSchema):
-    tags: Optional[List[str]] = []
+    tags: Optional[List[str | None]]
     created_at: datetime
 
 

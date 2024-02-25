@@ -23,6 +23,7 @@ class RatingRepo:
 
     async def get_single_rate(self, photo_id: int, user_id: UUID):
         # to check if user already set a rate
+        # todo check ability to rate upper
         stmt = select(RatingModel).filter(
             and_(RatingModel.photo_id == photo_id, RatingModel.user_id == user_id)
         )
@@ -30,12 +31,14 @@ class RatingRepo:
         return result.scalar_one_or_none()
 
     async def get_avg_rate(self, photo_id: int):
+        # todo del this function ?
         # to calculate average rating
         stmt = select(func.avg(RatingModel.value)).filter(RatingModel.photo_id == photo_id)
         result = await self.db.execute(stmt)
         return result.scalar()
 
     async def delete_single_rate(self, photo_id: int, user_id: UUID):
+        # only for admins
         stmt = select(RatingModel).filter(
             and_(RatingModel.photo_id == photo_id, RatingModel.user_id == user_id)
         )
