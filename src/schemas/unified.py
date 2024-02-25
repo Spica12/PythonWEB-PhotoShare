@@ -19,6 +19,7 @@ class ImagePageResponseShortSchema(ImageUpdateSchema):
     value: Optional[int] #Optional[RateSchema]
 
 
+
 # todo add tags
 class ImagePageResponseFullSchema(ImagePageResponseShortSchema):
     comments: Optional[List[CommentResponseIntegratedSchema]] = []

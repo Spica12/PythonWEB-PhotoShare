@@ -78,12 +78,23 @@ class PhotoRepo:
         await self.db.refresh(new_transformed_photo)
         return new_transformed_photo
 
-    async def get_tranformed_photo_by_photo_id(self, photo_id: int):
+    async def get_transformed_photo_by_photo_id(self, photo_id: int):
         stmt = select(TransformedImageLinkModel).filter_by(photo_id=photo_id)
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_tranformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
+    async def delete_transformed_photo(self, photo_id: int, transform_id: int):
+        stmt = select(TransformedImageLinkModel).filter(
+            and_(TransformedImageLinkModel.photo_id == photo_id, TransformedImageLinkModel.id == transform_id)
+        )
+        result = await self.db.execute(stmt)
+        result = result.scalar_one_or_none()
+        if result:
+            await self.db.delete(result)
+            await self.db.commit()
+        return result
+
+    async def get_transformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
         stmt = select(TransformedImageLinkModel).filter_by(
             photo_id=photo_id, id=transform_id
         )

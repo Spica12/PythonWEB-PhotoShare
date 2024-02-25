@@ -35,21 +35,23 @@ class PhotoService:
 
     async def update_photo(self, photo: PhotoModel) -> PhotoModel:
         photo = await self.repo.update_photo(photo)
-
         return photo
 
     async def add_transformed_photo_to_db(self, photo_id: int, image_url: str):
-        new_transformered_photo = await self.repo.add_transformed_photo_to_db(photo_id, image_url)
+        new_transformed_photo = await self.repo.add_transformed_photo_to_db(photo_id, image_url)
+        return new_transformed_photo
 
-        return new_transformered_photo
+    async def get_transformed_photos_by_photo_id(self, photo_id: int):
+        transformed_photos = await self.repo.get_transformed_photo_by_photo_id(photo_id)
+        return transformed_photos
 
-    async def get_tranformed_photos_by_photo_id(self, photo_id: int):
-        tranformed_photos = await self.repo.get_tranformed_photo_by_photo_id(photo_id)
-        return tranformed_photos
+    async def get_transformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
+        transformed_photo = await self.repo.get_transformed_photo_by_transformed_id(photo_id, transform_id)
+        return transformed_photo
 
-    async def get_tranformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
-        tranformed_photo = await self.repo.get_tranformed_photo_by_transformed_id(photo_id, transform_id)
-        return tranformed_photo
+    async def delete_transformed_photo(self, photo_id: int, transform_id: int):
+        result = await self.repo.delete_transformed_photo(photo_id, transform_id)
+        return result
 
     async def get_all_photo_per_page(self, skip: int, limit: int):
         query = await self.repo.get_photo_object_with_params(skip, limit)
@@ -68,3 +70,5 @@ class PhotoService:
             result["comments"] = comments
         logging.info(f"{result}")
         return result
+
+
