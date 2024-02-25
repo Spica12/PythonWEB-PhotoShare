@@ -52,7 +52,7 @@ class PhotoModel(Base):
         cascade="all, delete-orphan",
         back_populates="photos",
         single_parent=True,
-        lazy="joined",
+        lazy="joined"
     )
 
 

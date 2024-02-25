@@ -12,11 +12,10 @@ logging.basicConfig(
     level=logging.INFO,
     handlers=[
         logging.FileHandler(f"{LOG_DIR}/test.log"),
-        logging.StreamHandler()
+        # logging.StreamHandler()
     ],
 )
 # logging.getLogger("bcrypt").setLevel(logging.ERROR)
-
 
 class Settings(BaseSettings):
     DB_URL: str = "postgresql+asyncpg://postgres:567234@0.0.0.0:5432/abc"

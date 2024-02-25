@@ -1,26 +1,11 @@
-from sqlalchemy import select, and_
+import logging
+
+from sqlalchemy import select, and_, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.photos import PhotoModel, TransformedImageLinkModel, RatingModel
+from src.models.photos import PhotoModel, TransformedImageLinkModel, RatingModel, CommentModel, TagModel, photos_tags
 from src.models.users import UserModel
-
-
-# TODO Testing
-#
-import logging
-# logging rules
-logging.basicConfig(
-    format="%(asctime)s %(message)s",
-    level=logging.INFO,
-    handlers=[
-        logging.FileHandler("test.log"),
-        # logging.StreamHandler()
-    ],
-)
-# logging.getLogger("pika").setLevel(logging.WARNING)
-#
-#
 
 
 class PhotoRepo:
@@ -104,18 +89,44 @@ class PhotoRepo:
 
     async def get_photo_object_with_params(self, skip: int, limit: int):
         # todo add tags
+        #  AVG rating
+        # stmt = (select(PhotoModel.id,
+        #                PhotoModel.image_url,
+        #                PhotoModel.description,
+        #                UserModel.username,
+        #                RatingModel.value)
+        #         .select_from(UserModel)
+        #         .join(PhotoModel, isouter=True)
+        #         .join(RatingModel, isouter=True)
+        #         .filter(PhotoModel.id.isnot(None))
+        #         .offset(skip)
+        #         .limit(limit))
+
         stmt = (select(PhotoModel.id,
                        PhotoModel.image_url,
                        PhotoModel.description,
                        UserModel.username,
-                       RatingModel.value)
+                       func.round(func.avg(RatingModel.value), 2).label('avg_rating'),
+                       func.json_agg(TagModel.name).label('tags')
+                       )
                 .select_from(UserModel)
-                .join(PhotoModel, isouter=True)
+                .join(PhotoModel)#, isouter=True)
                 .join(RatingModel, isouter=True)
+                .join(photos_tags)
+                .join(TagModel)
                 .filter(PhotoModel.id.isnot(None))
+                .group_by(PhotoModel.id,
+                          UserModel.username,
+                          PhotoModel.image_url,
+                          PhotoModel.description,
+                          )
                 .offset(skip)
                 .limit(limit))
+
+        # todo remove logging
+        logging.info(f"STMT: {stmt}")
         result = await self.db.execute(stmt)
+        logging.info(f"Result:  {result}")
         return result
 
     async def get_photo_page(self, photo_id: int, skip: int, limit: int):
