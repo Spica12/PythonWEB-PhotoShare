@@ -66,3 +66,7 @@ class TokenSchema(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
+class RequestPasswordReset(BaseModel):
+    email: str
+    username: str

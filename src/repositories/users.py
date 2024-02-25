@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -73,3 +73,29 @@ class UserRepo:
     async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True
         await self.db.commit()
+
+    async def update_user(self, user: UserModel):
+        async with self.db.begin():
+            self.db.merge(user)
+
+    async def get_user_by_email_and_username(self, email: str, username: str):
+        stmt = select(UserModel).filter(
+            and_(UserModel.email == email, UserModel.username == username)
+        )
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+
+        return user
+
+    async def update_user_password(self, user_id: UUID, new_password: str):
+        user = await self.get_user_by_id(user_id)
+        if user:
+            try:
+                hashed_password = AuthService().get_password_hash(new_password)
+                user.password = hashed_password
+                await self.db.commit()
+            except Exception as e:
+                print(f"Error updating user password: {e}")
+        else:
+            print(f"User with ID {user_id} not found.")
+

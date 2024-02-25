@@ -5,7 +5,7 @@ from src.models.users import UserModel
 
 from src.dependencies.database import get_db
 
-from src.schemas.users import UserSchema, UserResponse, TokenSchema, RequestEmail
+from src.schemas.users import UserSchema, UserResponse, TokenSchema, RequestEmail, RequestPasswordReset
 from src.services.auth import auth_service
 from src.services.email import EmailService
 from src.conf import messages
@@ -116,3 +116,30 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
 #     if user:
 #         background_tasks.add_task(email_service, user.email, user.username, str(request.base_url))
 #     return {"message": "Check your email for confirmation."}
+
+@router_auth.post("/password-reset", response_model=None)
+async def request_password_reset(
+    password_reset_request: RequestPasswordReset, db: AsyncSession = Depends(get_db)
+):
+    try:
+        print("Before reset_password_and_notify_user")
+
+        # Перевірка наявності користувача
+        user = await auth_service.get_user_by_email_and_username(
+            password_reset_request.email, password_reset_request.username, db
+        )
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        new_password = auth_service.generate_random_password()
+
+        # Відправлення сповіщення про скидання пароля за допомогою EmailService
+        email_service = EmailService()
+        await email_service.send_password_reset_notification(password_reset_request.email, new_password)
+
+        print("After reset_password_and_notify_user")
+        return {"message": "Password reset request successful. Check your email for the new password."}
+    except Exception as e:
+        print(f"Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
