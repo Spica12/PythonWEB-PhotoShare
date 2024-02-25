@@ -21,7 +21,7 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema, ImageSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema, ImageSchema, ImageResponseAfterUpdateSchema
 from src.schemas.transform import TransformRequestSchema
 from src.schemas.unified import ImagePageResponseShortSchema, ImagePageResponseFullSchema
 
@@ -81,20 +81,18 @@ async def show_photos(
 )
 async def show_photo(
         photo_id: int,
-        limit: int = Query(20, ge=10, le=100),
+        limit: int = Query(20, ge=10, le=50),
         skip: int = Query(0, ge=0),
         db: AsyncSession = Depends(get_db)
 ):
     """
-    Show photo by id
-    Pagination in query parameters for comments.
+    TODO OK. Remove this string in release
+
+    Show photo by id with comments if it is.
+    Limit and skip in query parameters is for comments pagination.
 
     Show for all users, unregistered too
     """
-    # todo rebase rate with AVG !
-    #  add tags
-    #   add to comments: update_user
-    #   rebase comments created with updated
     photo = await PhotoService(db).get_one_photo_page(photo_id, skip, limit)
     if not photo:
         raise HTTPException(
@@ -114,6 +112,13 @@ async def upload_photo(
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
+    """
+    TODO OK. Remove this string in release
+    Upload photos. Description and tags are optional.
+    Only 5 tags accepted with ,(coma) separator.
+
+    Only for registered users.
+    """
     if body.tags:
         list_tags = body.tags.split(",")
         body.tags = [tag.strip() for tag in list_tags]
@@ -127,7 +132,7 @@ async def upload_photo(
     # Upload photo and get url
     photo_cloud_url, public_id = CloudinaryService().upload_photo(body.file, current_user)
     # Add new_photo to db
-    # Without this, new_photo isn't returned. I don't know why.
+    # Without deepcopy(or copy), new_photo isn't returned. I don't know why.
     new_photo = deepcopy(await PhotoService(db).add_photo(
        current_user,
        public_id,
@@ -137,12 +142,6 @@ async def upload_photo(
     if body.tags:
         await TagService(db).add_tags_to_photo(new_photo.id, body.tags)
     return new_photo
-#    new_photo_copy = copy(new_photo)
-#    # If we have tags then we need to add them
-#    if body.tags:
-#        await TagService(db).add_tags_to_photo(new_photo_copy.id, body.tags)
-#
-#    return new_photo_copy
 
 
 @router_photos.delete(
@@ -158,14 +157,17 @@ async def delete_photo(
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     """
+    TODO OK. Remove this string in release
     Delete image from db and cloudinary.
-    Only for registered users
+    Only for registered users.
 
-    We must to check if admin or owner of the image
-
-    All depends will be later
+    Only for registered users.
+    Add - check if admin|moderator|owner
     """
     photo = await PhotoService(db).get_photo_exists(photo_id)
+    # check only main image before delete it.
+    # we can not use the check and there will still be no errors,
+    # may be it’s here for beauty :)
     if not photo:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
@@ -192,6 +194,12 @@ async def delete_photo(
     else:
         result = await PhotoService(db).delete_transformed_photo(photo_id, transform_id)
         return result
+
+
+# ================================================================================================================
+# TODO remove in release
+# Still in work
+# ================================================================================================================
 
 
 @router_photos.get(
@@ -283,14 +291,9 @@ async def transform_photo(
 """
 
 
-# ================================================================================================================
-# end of photos section
-# ================================================================================================================
-
-
 @router_photos.put(
     "/{photo_id}",
-    response_model=ImageResponseAfterCreateSchema,
+    response_model=ImageResponseAfterUpdateSchema,
     dependencies=None,
     status_code=status.HTTP_200_OK,
 )
@@ -301,12 +304,11 @@ async def update_photo(
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     """
-    Change image description.
-    Only for registered users
+    TODO OK. Remove this string in release
+    Change photo description.
 
-    We must to check if admin, moderator or owner of the image
-
-    All depends will be later
+    Only for registered users.
+    Add - check if admin|moderator|owner
     """
     photo = await PhotoService(db).get_photo_exists(photo_id)
     if not photo:
@@ -326,13 +328,12 @@ async def update_photo(
 
     photo.description = description
     edited_photo = await PhotoService(db).update_photo(photo)
-
     return edited_photo
 
 
 # ================================================================================================================
 # TODO REMOVE EVERYTHING BELOW THIS TEXT
-#  DEPRECATED
+#  DEPRECATED and will be remove in release
 # somebody can try single methods
 # ================================================================================================================
 

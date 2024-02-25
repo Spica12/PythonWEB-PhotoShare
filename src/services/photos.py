@@ -65,9 +65,12 @@ class PhotoService:
     async def get_one_photo_page(self, photo_id: int, skip: int, limit: int):
         result = await self.repo.get_photo_page(photo_id, skip, limit)
         if result is not None:
+            # if we find photo
+            # translate result to dict
             result = result._asdict()
             comments = await CommentRepo(self.repo.db).get_all_comments(photo_id, skip, limit)
             logging.info(f"{comments}")
+            # adding comments to result dict
             result["comments"] = comments
         logging.info(f"{result}")
         return result

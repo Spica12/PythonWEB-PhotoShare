@@ -11,4 +11,4 @@ class ImagePageResponseShortSchema(photos.ImageResponseTagsSchema):
 
 
 class ImagePageResponseFullSchema(ImagePageResponseShortSchema):
-    comments: Optional[List[CommentResponseIntegratedSchema]] = []
+    comments: Optional[List[CommentResponseIntegratedSchema | None]] = []

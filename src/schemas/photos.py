@@ -34,13 +34,11 @@ class ImageExtendedResponseSchema(ImageResponseRatingSchema):
     created_at: datetime
 
 
-class ImageResponseAfterCreateSchema(ImageBaseResponseSchema):
-    # TODO
-    # This is test schema. Need to think how to do better
+class ImageResponseAfterUpdateSchema(ImageBaseResponseSchema):
+    updated_at: datetime
+
+class ImageResponseAfterCreateSchema(ImageResponseAfterUpdateSchema):
     public_id: str
-    user_id: uuid.UUID
-    created_at: datetime
-    # updated_at: datetime
 
 
 class ImageResponseSchema(ImageExtendedResponseSchema):
