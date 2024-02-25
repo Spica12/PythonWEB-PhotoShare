@@ -1,17 +1,17 @@
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.dependencies.database import get_db
+# models
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
+
+# schemas
 from src.schemas.users import UserSchema
 
 import logging
 
 
 class UserRepo:
-
     def __init__(self, db):
         self.db: AsyncSession = db
 
@@ -19,14 +19,12 @@ class UserRepo:
         stmt = select(UserModel).filter_by(username=username)
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
-
         return user
 
     async def get_user_by_id(self, user_id: UUID):
         stmt = select(UserModel).filter_by(id=user_id)
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
-
         return user
 
     async def get_user_by_email(self, email: str):
@@ -38,7 +36,6 @@ class UserRepo:
         user = user.scalar_one_or_none()
 
         logging.info(f"SQL result: {user}")
-
 
         return user
 
@@ -58,14 +55,12 @@ class UserRepo:
         self.db.add(new_user)
         await self.db.commit()
         await self.db.refresh(new_user)
-
         return new_user
 
     async def get_refresh_token_by_user(self, user: UserModel):
         stmt = select(TokenModel).filter_by(user_id=user.id)
         token = await self.db.execute(stmt)
         token = token.scalar_one_or_none()
-
         return token
 
     async def update_refresh_token(self, user: UserModel, refresh_token: TokenModel | None):
@@ -79,11 +74,28 @@ class UserRepo:
             self.db.add(new_token)
         await self.db.commit()
 
+    async def remove_refresh_token(self, user: UserModel):
+        stmt = select(TokenModel).filter_by(user_id=user.id)
+        result = await self.db.execute(stmt)
+        result = result.scalar_one_or_none()
+        if result:
+            await self.db.delete(result)
+            await self.db.commit()
+        return result
+
     async def add_token_to_blacklist(self, token: str):
+        # add access token to blacklist when user banned or use @logout
         new_token = BlackListModel(token=token)
         self.db.add(new_token)
         await self.db.commit()
+        await self.db.refresh(new_token)
+        return new_token
 
+    async def get_token_blacklist(self, token: str):
+        # to check if object exists (token in blacklist)
+        stmt = select(BlackListModel).filter_by(token=token)
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Security, status, Depends, BackgroundTasks, Request
+from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.security import HTTPAuthorizationCredentials, OAuth2PasswordRequestForm, HTTPBearer
 from src.models.users import UserModel
@@ -76,14 +77,21 @@ async def login(
 
 
 @router_auth.get("/logout")
-async def logout():
-    pass
+async def logout(current_user: UserModel = Depends(auth_service.logout_service)):
+    return RedirectResponse(status_code=status.HTTP_302_FOUND, url="/")
 
 
 @router_auth.get("/refresh", response_model=TokenSchema)
 async def refresh_token(credentials: HTTPAuthorizationCredentials = Security(get_refresh_token),
                         db: AsyncSession = Depends(get_db)):
     token = credentials.credentials
+
+    check = await auth_service.check_access_token_blacklist(token, db)
+    if check is not None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=messages.INVALID_TOKEN
+        )
     email = await auth_service.get_email_from_token(token)
     user = await auth_service.get_user_by_email(email, db)
     refresh_token = await auth_service.get_refresh_token_by_user(user, db)

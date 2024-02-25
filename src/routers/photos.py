@@ -1,9 +1,14 @@
+from copy import copy
 from fastapi import (
     APIRouter, Depends, HTTPException, Path, Query, Request, status,
     File, Form, UploadFile
 )
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from typing import List, Union
+from src.services.tags import TagService
+
 
 # config
 from src.conf import messages
@@ -16,7 +21,7 @@ from src.models.users import Roles
 # schemas
 from src.schemas import comment
 from src.schemas import rating
-from src.schemas.photos import ImageResponseAfterCreateSchema
+from src.schemas.photos import ImageResponseAfterCreateSchema, ImageSchema
 from src.schemas.transform import TransformRequestSchema
 from src.schemas.unified import ImagePageResponseShortSchema, ImagePageResponseFullSchema
 
@@ -107,6 +112,7 @@ async def show_photo(
 )
 # todo use multiple body !
 async def upload_photo(
+
     request: Request,
     transformation: TransformRequestSchema,                                                     # todo add to body schema
     photo_id: int | None = Query(default=None, ge=1),
@@ -155,6 +161,39 @@ async def upload_photo(
 
             # For Swagger
             return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
+##############################
+#    body: ImageSchema = Depends(),
+#    db: AsyncSession = Depends(get_db),
+#    current_user: UserModel = Depends(auth_service.get_current_user),
+#):
+#    if body.tags:
+#        list_tags = body.tags.split(",")
+#        body.tags = [tag.strip() for tag in list_tags]
+#        if len(body.tags) > 5:
+#            raise HTTPException(
+#                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS
+#            )
+#    else:
+#        body.tags = []
+#    # Upload photo and get url
+#    photo_cloud_url, public_id = CloudinaryService().upload_photo(
+#        body.file, current_user
+#    )
+#    # Add new_photo to db
+#    new_photo = await PhotoService(db).add_photo(
+#        current_user,
+#        public_id,
+#        photo_cloud_url,
+#        body.description,
+#    )
+#    # Without this, new_photo isn't returned. I don't know why.
+#    new_photo_copy = copy(new_photo)
+#    # If we have tags then we need to add them
+#    if body.tags:
+#        await TagService(db).add_tags_to_photo(new_photo_copy.id, body.tags)
+#
+#    return new_photo_copy
+
 
 
 @router_photos.delete(
@@ -362,7 +401,8 @@ async def transform_photo(
         )
 
     transform_photo_url = CloudinaryService().get_transformed_photo_url(
-        public_id=photo.public_id, transformation=transformation.model_dump()
+        public_id=photo.public_id,
+        request_for_transformation=transformation.model_dump(),
     )
 
     new_transformered_photo = await PhotoService(db).add_transformed_photo_to_db(
