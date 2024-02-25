@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from fastapi import (
     APIRouter, Depends, HTTPException, Path, Query, Request, status,
     File, Form, UploadFile
@@ -193,7 +193,6 @@ async def upload_photo(
 #        await TagService(db).add_tags_to_photo(new_photo_copy.id, body.tags)
 #
 #    return new_photo_copy
-
 
 
 @router_photos.delete(

@@ -11,7 +11,6 @@ class ImageSchema(BaseModel):
     file: UploadFile = File()
     description: Optional[str] = Field(max_length=255)
     tags: Optional[str] = None
-    tags: Optional[str] = None
 
 
 class ImageUpdateSchema(BaseModel):

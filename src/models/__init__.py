@@ -3,7 +3,6 @@ from src.models.photos import (
     PhotoModel,
     TransformedImageLinkModel,
     TagModel,
-    PhotoTagModel,
     CommentModel,
     RatingModel,
 )
