@@ -1,5 +1,7 @@
+from dotenv import load_dotenv
+import os
+
 import asyncio
-import asyncpg
 
 import pytest
 import pytest_asyncio
@@ -13,16 +15,9 @@ from src.models.base import Base
 from src.models.users import UserModel
 from src.services.auth import auth_service
 
-# ------------------------------------------------------------------------------------
-# TODO : use docker
-# ------------------------------------------------------------------------------------
-# docker run --name pythoweb-photoshare -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
-# docker exec -it pythoweb-photoshare bash
-# psql -U postgres
-# CREATE DATABASE test;
-# ------------------------------------------------------------------------------------
 
-SQLALCHEMY_DATABASE_URL = "postgresql+asyncpg://postgres:password@localhost:5432/test"
+load_dotenv()
+SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DB_URL")
 
 
 engine = create_async_engine(

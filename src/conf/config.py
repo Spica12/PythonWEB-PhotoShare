@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 # TODO Testing
 import logging
 # logging global rules
-LOG_DIR = "src/logs"
+LOG_DIR = "logs"
 logging.basicConfig(
     format="%(asctime)s %(message)s",
     level=logging.INFO,
