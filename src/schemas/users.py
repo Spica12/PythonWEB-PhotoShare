@@ -6,9 +6,11 @@ from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from src.models.users import Roles
 
 
-class UserSchema(BaseModel):
-    """Pydantic model for validating incoming user registration data."""
+class UserNameSchema(BaseModel):
     username: str = Field(min_length=2, max_length=50)
+
+
+class UserSchema(UserNameSchema):
     email: EmailStr
     password: str = Field(min_length=4, max_length=20)
 
