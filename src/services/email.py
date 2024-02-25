@@ -61,3 +61,21 @@ class EmailService:
 
         except ConnectionErrors as err:
             print(err)
+
+    async def send_new_password_mail(
+        self, email: EmailStr, username: str, new_password: str,
+    ):
+        try:
+            message = MessageSchema(
+                subject="New psw",
+                recipients=[email],
+                template_body={
+                    "username": username,
+                    "new_psw": new_password,
+                },
+                subtype=MessageType.html,
+            )
+            await self.fm.send_message(message, template_name="new_password.html")
+
+        except ConnectionErrors as err:
+            print(err)

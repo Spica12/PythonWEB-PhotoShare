@@ -153,6 +153,31 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
     return {"message": messages.EMAIL_CONFIRMED}
 
 
+@router_auth.get("/password-reset/{token}", response_model=None)
+async def password_reset(
+    token: str,
+    request: Request,
+    bt: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    email = await auth_service.get_email_from_token(token)
+    user = await auth_service.get_user_by_email(email, db)
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail=messages.VERIFICATION_ERROR
+        )
+    new_password = auth_service.generate_password()
+    new_password_hash = auth_service.get_password_hash(new_password)
+    await auth_service.update_password(user.id, new_password_hash, db)
+    bt.add_task(
+        EmailService().send_new_password_mail,
+        user.email,
+        user.username,
+        new_password,
+    )
+    return {"message": messages.NEW_PASSWORD_SENT}
+
+
 @router_auth.post("/password-reset", response_model=None)
 async def request_password_reset(
     body: RequestPasswordResetSchema,
@@ -166,6 +191,11 @@ async def request_password_reset(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND
         )
+    if not exist_user.confirmed:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=messages.EMAIL_NOT_CONFIRMED,
+        )
     # Check if username is valid
     if body.username != exist_user.username:
         raise HTTPException(
@@ -177,3 +207,4 @@ async def request_password_reset(
         exist_user.username,
         str(request.base_url),
     )
+    return {"message": messages.PASSWORD_RESET_REQUEST_SENT}
