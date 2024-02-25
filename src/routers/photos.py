@@ -39,7 +39,6 @@ router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
 # TODO remove in release
 from typing import Union
-import logging
 # deprecated routers.
 router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
 
@@ -82,7 +81,7 @@ async def show_photos(
 )
 async def show_photo(
         photo_id: int,
-        limit: int = Query(20, ge=20, le=100),
+        limit: int = Query(20, ge=10, le=100),
         skip: int = Query(0, ge=0),
         db: AsyncSession = Depends(get_db)
 ):
@@ -110,83 +109,36 @@ async def show_photo(
     dependencies=None,
     status_code=status.HTTP_201_CREATED,
 )
-# todo use multiple body !
 async def upload_photo(
-
-    request: Request,
-    transformation: TransformRequestSchema,                                                     # todo add to body schema
-    photo_id: int | None = Query(default=None, ge=1),
-    transform_id: int | None = Query(default=None, ge=1),                                     # if None - show all transformations
-    qr_code: bool = Query(default=False),                                                       # Show qr code for current transformation
-    file: UploadFile = File(),                                                                  # todo add to body schema
-    description: str | None = Form("", description="Add description to your photo"),     # todo add to body schema
+    # file: UploadFile = File(),                                                                  # todo add to body schema
+    # description: str | None = Form("", description="Add description to your photo"),     # todo add to body schema
+    body: ImageSchema = Depends(),
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(auth_service.get_current_user),
 ):
-    if transform_id is None:
-        # Upload photo and get url
-        photo_cloud_url, public_id = CloudinaryService().upload_photo(file, current_user)
-        photo = await PhotoService(db).add_photo(
-            current_user, public_id, photo_cloud_url, description
-        )
-        return photo
-    else:
-        photo = await PhotoService(db).get_photo_exists(photo_id)
-        if not photo:
+    if body.tags:
+        list_tags = body.tags.split(",")
+        body.tags = [tag.strip() for tag in list_tags]
+        if len(body.tags) > 5:
             raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+               status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS
             )
+    else:
+        body.tags = []
 
-        if not qr_code:
-            # Need to choose delete this route or not
-            transform_photo_url = CloudinaryService().get_transformed_photo_url(
-                public_id=photo.public_id, transformation=transformation.model_dump()
-            )
-            new_transformed_photo = await PhotoService(db).add_transformed_photo_to_db(
-                photo.id, transform_photo_url
-            )
-            return {"transformed_photo_url": new_transformed_photo.image_url}
-
-        else:
-            transform_photo = await PhotoService(db).get_transformed_photo_by_transformed_id(photo_id, transform_id)
-            if not transform_photo:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
-                )
-            # TODO rewrite URL with valid query parameters
-            transform_photo_url = f"{str(request.base_url)}api/photos/{photo_id}/transformed/{transform_id}/qrcode"
-
-            transformed_qr_code = QRCodeService().generate_qr_code(transform_photo_url)
-
-            # For Swagger
-            return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
-##############################
-#    body: ImageSchema = Depends(),
-#    db: AsyncSession = Depends(get_db),
-#    current_user: UserModel = Depends(auth_service.get_current_user),
-#):
-#    if body.tags:
-#        list_tags = body.tags.split(",")
-#        body.tags = [tag.strip() for tag in list_tags]
-#        if len(body.tags) > 5:
-#            raise HTTPException(
-#                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS
-#            )
-#    else:
-#        body.tags = []
-#    # Upload photo and get url
-#    photo_cloud_url, public_id = CloudinaryService().upload_photo(
-#        body.file, current_user
-#    )
-#    # Add new_photo to db
-#    new_photo = await PhotoService(db).add_photo(
-#        current_user,
-#        public_id,
-#        photo_cloud_url,
-#        body.description,
-#    )
-#    # Without this, new_photo isn't returned. I don't know why.
+    # Upload photo and get url
+    photo_cloud_url, public_id = CloudinaryService().upload_photo(body.file, current_user)
+    # Add new_photo to db
+    # Without this, new_photo isn't returned. I don't know why.
+    new_photo = deepcopy(await PhotoService(db).add_photo(
+       current_user,
+       public_id,
+       photo_cloud_url,
+       body.description
+    ))
+    if body.tags:
+        await TagService(db).add_tags_to_photo(new_photo.id, body.tags)
+    return new_photo
 #    new_photo_copy = copy(new_photo)
 #    # If we have tags then we need to add them
 #    if body.tags:
@@ -232,8 +184,7 @@ async def delete_photo(
         )
 
     if not transform_id:
-        result = {"result": "ok"} # todo only for testing db, remove when using cloudinary
-        # result = CloudinaryService().destroy_photo(public_id=photo.public_id)
+        result = CloudinaryService().destroy_photo(public_id=photo.public_id)
         if result["result"] == "ok":
             await PhotoService(db).delete_photo(photo)
         elif result["result"] == "not found":
@@ -243,9 +194,6 @@ async def delete_photo(
     else:
         result = await PhotoService(db).delete_transformed_photo(photo_id, transform_id)
         return result
-
-
-
 
 
 @router_photos.get(
@@ -291,6 +239,51 @@ async def get_transformed_photos(
         else:
             response = RedirectResponse(url=transform_photo.image_url)
             return response
+
+
+
+@router_photos.post(
+    "/{photo_id}/transform",
+    response_model=None,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def transform_photo(
+    photo_id: int,
+    transformation: TransformRequestSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    # Need to choose delete this route or not
+    photo = await PhotoService(db).get_photo_exists(photo_id)
+    if not photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    transform_photo_url = CloudinaryService().get_transformed_photo_url(
+        public_id=photo.public_id,
+        request_for_transformation=transformation.model_dump(),
+    )
+
+    new_transformered_photo = await PhotoService(db).add_transformed_photo_to_db(
+        photo.id, transform_photo_url
+    )
+
+    return {"transformed_photo_url": new_transformered_photo.image_url}
+
+
+"""
+            # Need to choose delete this route or not
+            transform_photo_url = CloudinaryService().get_transformed_photo_url(
+                public_id=photo.public_id, transformation=transformation.model_dump()
+            )
+            new_transformed_photo = await PhotoService(db).add_transformed_photo_to_db(
+                photo.id, transform_photo_url
+            )
+            return {"transformed_photo_url": new_transformed_photo.image_url}
+"""
+
 
 # ================================================================================================================
 # end of photos section
@@ -379,36 +372,24 @@ async def create_qr_code_for_transformed_photo(
     # For Swagger
     return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
 
+"""
 
-@router_deprecated.post(
-    "/{photo_id}/transform",
-    response_model=None,
-    dependencies=None,
-    status_code=status.HTTP_201_CREATED,
-)
-async def transform_photo(
-    photo_id: int,
-    transformation: TransformRequestSchema,
-    db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
-):
-    # Need to choose delete this route or not
-    photo = await PhotoService(db).get_photo_exists(photo_id)
-    if not photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
-        )
+transform_photo = await PhotoService(db).get_transformed_photo_by_transformed_id(photo_id, transform_id)
+            if not transform_photo:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+                )
+            # TODO rewrite URL with valid query parameters
+            transform_photo_url = f"{str(request.base_url)}api/photos/{photo_id}/transformed/{transform_id}/qrcode"
 
-    transform_photo_url = CloudinaryService().get_transformed_photo_url(
-        public_id=photo.public_id,
-        request_for_transformation=transformation.model_dump(),
-    )
+            transformed_qr_code = QRCodeService().generate_qr_code(transform_photo_url)
 
-    new_transformered_photo = await PhotoService(db).add_transformed_photo_to_db(
-        photo.id, transform_photo_url
-    )
+            # For Swagger
+            return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
 
-    return {"transformed_photo_url": new_transformered_photo.image_url}
+"""
+
 
 @router_deprecated.get(
     "/{photo_id}/transformed/{transform_id}/url",

@@ -3,6 +3,19 @@ from pathlib import Path
 from pydantic import ConfigDict, EmailStr, field_validator
 from pydantic_settings import BaseSettings
 
+# TODO Testing
+import logging
+# logging global rules
+LOG_DIR = "src/logs"
+logging.basicConfig(
+    format="%(asctime)s %(message)s",
+    level=logging.INFO,
+    handlers=[
+        logging.FileHandler(f"{LOG_DIR}/test.log"),
+        # logging.StreamHandler()
+    ],
+)
+# logging.getLogger("bcrypt").setLevel(logging.ERROR)
 
 class Settings(BaseSettings):
     DB_URL: str = "postgresql+asyncpg://postgres:567234@0.0.0.0:5432/abc"

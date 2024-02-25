@@ -7,19 +7,22 @@ from src.models.users import Roles
 
 
 class UserNameSchema(BaseModel):
-    username: str = Field(min_length=2, max_length=50)
+    username: str
 
 
-class UserSchema(UserNameSchema):
+class RequestEmail(BaseModel):
     email: EmailStr
+
+
+class UserSchema(RequestEmail):
+    username: str = Field(min_length=2, max_length=50)
     password: str = Field(min_length=4, max_length=20)
 
 
-class UserResponse(BaseModel):
-    """Pydantic model for serializing user data in responses."""
+class UserResponse(RequestEmail, UserNameSchema):
     id: uuid.UUID
-    username: str
-    email: EmailStr
+    # username: str
+    # email: EmailStr
     avatar: str | None
     role: Roles
     # picture_count: Optional[int]
@@ -32,7 +35,6 @@ class UserResponse(BaseModel):
 
 
 class UserUpdate(UserSchema):
-    """Pydantic model for validating incoming user update data."""
     # Validation of user input during profile update
     old_password: Optional[str] = None
     new_password: Optional[str] = None
@@ -40,10 +42,9 @@ class UserUpdate(UserSchema):
     avatar: Optional[str] = None
 
 
-class AnotherUsers(BaseModel):
-    """Pydantic model for serializing simplified user data in responses."""
-    username: str
-    email: EmailStr
+class AnotherUsers(RequestEmail, UserNameSchema):
+    # username: str
+    # email: EmailStr
     avatar: HttpUrl | None
     role: Roles
     picture_count: Optional[int]
@@ -51,10 +52,6 @@ class AnotherUsers(BaseModel):
 
 
 class TokenSchema(BaseModel):
-    """
-    Pydantic model for serializing JWT tokens.
-    """
-
     # не включаю id, якщо його буде автоматично генерувати база даних.
     # id: int
     access_token: str
@@ -65,7 +62,8 @@ class TokenSchema(BaseModel):
 
     # Поки не включаю час створення та оновлення токена, поки не розумію чи це потрібно
 
-
+    
 class RequestPasswordResetSchema(BaseModel):
     email: EmailStr
     username: str
+
