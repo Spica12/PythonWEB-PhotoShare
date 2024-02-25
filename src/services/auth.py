@@ -4,6 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 import smtplib
@@ -149,21 +150,36 @@ class AuthService:
         alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
         return ''.join(secrets.choice(alphabet) for i in range(length))
 
-    async def reset_password_and_notify_user(self, email: str, new_password: str, db: AsyncSession):
-        user = await self.get_user_by_email(email, db)
-
+    async def reset_password_and_notify_user(
+            self, email: str, username: str, new_password: str, db: AsyncSession
+    ):
+        # Check if the user exists by email or username
+        user = await UserRepo(db).get_user_by_email_and_username(email, username)
         if user:
             hashed_password = self.get_password_hash(new_password)
-            await self.update_user_password(user.id, hashed_password, db)
 
-            # Send password reset notification using EmailService
-            try:
-                email_service = EmailService()
-                await email_service.send_password_reset_notification(email, new_password)
-            except Exception as err:
-                print(f"Error sending password reset notification: {err}")
+            # Update user's password in the database
+            await UserRepo(db).update_user_password(user.id, hashed_password)
+
+            print("Password reset successfully.")
         else:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found.")
+            print(f"User with email {email} or username {username} not found.")
+
+        # Check if the user exists by username
+        user_by_username = await UserRepo(db).get_user_by_username(username)
+        if user_by_username:
+            # Update user's password by username in the database
+            await UserRepo(db).update_user_password(user_by_username.id, hashed_password)
+        else:
+            print(f"User with username {username} not found.")
+
+    async def get_user_by_email_and_username(self, email: str, username: str, db: AsyncSession):
+        stmt = select(UserModel).filter(
+            (UserModel.email == email) & (UserModel.username == username)
+        )
+        user = await db.execute(stmt)
+        user = user.scalar_one_or_none()
+        return user
 
     async def update_user_password(self, user_id: UUID, new_password: str, db: AsyncSession):
         user = await self.get_user_by_id(user_id, db)

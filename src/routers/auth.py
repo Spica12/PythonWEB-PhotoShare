@@ -7,7 +7,7 @@ from src.models.users import UserModel
 
 from src.dependencies.database import get_db
 
-from src.schemas.users import UserSchema, UserResponse, TokenSchema
+from src.schemas.users import UserSchema, UserResponse, TokenSchema, RequestPasswordReset
 from src.schemas.email import RequestEmail
 from src.services.auth import auth_service
 from src.services.email import EmailService
@@ -122,26 +122,28 @@ async def request_email(body: RequestEmail, background_tasks: BackgroundTasks, r
     return {"message": "Check your email for confirmation."}
 
 
-from fastapi import HTTPException, status
-
-
-
-
 @router_auth.post("/password-reset", response_model=None)
-async def request_password_reset(password_reset_request: RequestEmail, db: AsyncSession = Depends(get_db)):
+async def request_password_reset(
+    password_reset_request: RequestPasswordReset, db: AsyncSession = Depends(get_db)
+):
     try:
         print("Before reset_password_and_notify_user")
 
         # Перевірка наявності користувача
-        user = await auth_service.get_user_by_email(password_reset_request.email, db)
+        user = await auth_service.get_user_by_email_and_username(
+            password_reset_request.email, password_reset_request.username, db
+        )
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         new_password = auth_service.generate_random_password()
-        await auth_service.reset_password_and_notify_user(password_reset_request.email, new_password, db)
+
+        # Відправлення сповіщення про скидання пароля за допомогою EmailService
+        email_service = EmailService()
+        await email_service.send_password_reset_notification(password_reset_request.email, new_password)
+
         print("After reset_password_and_notify_user")
         return {"message": "Password reset request successful. Check your email for the new password."}
     except Exception as e:
         print(f"Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
