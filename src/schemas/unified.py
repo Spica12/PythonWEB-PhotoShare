@@ -6,8 +6,8 @@ from src.schemas.comment import CommentResponseIntegratedSchema
 
 
 class ImagePageResponseShortSchema(photos.ImageResponseTagsSchema):
-    username: Optional[str]
-    avg_rating: Optional[float]
+    username: Optional[str] | None
+    avg_rating: Optional[float] | None
 
 
 class ImagePageResponseFullSchema(ImagePageResponseShortSchema):

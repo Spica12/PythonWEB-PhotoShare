@@ -39,6 +39,7 @@ router_photos = APIRouter(prefix="/photos", tags=["Photos"])
 
 # TODO remove in release
 from typing import Union
+import logging
 # deprecated routers.
 router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
 
@@ -59,6 +60,7 @@ async def show_photos(
     db: AsyncSession = Depends(get_db),
 ):
     """
+    TODO OK. Remove this string in release
     Show all photos. Pagination in query parameters:
         limit = limit photos per page
         skip = skip images from previous pages.
@@ -67,8 +69,6 @@ async def show_photos(
 
     Show for all users, unregistered too
     """
-    # todo rebase rate with AVG !
-    #  add tags
     photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
     return photos
 
@@ -94,7 +94,7 @@ async def show_photo(
     # todo rebase rate with AVG !
     #  add tags
     #   add to comments: update_user
-    #   rebese comments created with updated
+    #   rebase comments created with updated
     photo = await PhotoService(db).get_one_photo_page(photo_id, skip, limit)
     if not photo:
         raise HTTPException(
@@ -110,8 +110,6 @@ async def show_photo(
     status_code=status.HTTP_201_CREATED,
 )
 async def upload_photo(
-    # file: UploadFile = File(),                                                                  # todo add to body schema
-    # description: str | None = Form("", description="Add description to your photo"),     # todo add to body schema
     body: ImageSchema = Depends(),
     db: AsyncSession = Depends(get_db),
     current_user: UserModel = Depends(auth_service.get_current_user),

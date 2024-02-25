@@ -57,8 +57,9 @@ class PhotoService:
         query = await self.repo.get_photo_object_with_params(skip, limit)
         result = []
         for photo in query:
-            logging.info(f"{photo._asdict()}")
+            logging.info(f"Services: {photo._asdict()}")
             result.append(photo._asdict())
+        logging.info(f"Services: {result}")
         return result
 
     async def get_one_photo_page(self, photo_id: int, skip: int, limit: int):

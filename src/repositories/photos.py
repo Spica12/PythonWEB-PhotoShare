@@ -88,32 +88,18 @@ class PhotoRepo:
         return result.scalar_one_or_none()
 
     async def get_photo_object_with_params(self, skip: int, limit: int):
-        # todo add tags
-        #  AVG rating
-        # stmt = (select(PhotoModel.id,
-        #                PhotoModel.image_url,
-        #                PhotoModel.description,
-        #                UserModel.username,
-        #                RatingModel.value)
-        #         .select_from(UserModel)
-        #         .join(PhotoModel, isouter=True)
-        #         .join(RatingModel, isouter=True)
-        #         .filter(PhotoModel.id.isnot(None))
-        #         .offset(skip)
-        #         .limit(limit))
-
         stmt = (select(PhotoModel.id,
                        PhotoModel.image_url,
                        PhotoModel.description,
                        UserModel.username,
-                       func.round(func.avg(RatingModel.value), 2).label('avg_rating'),
-                       func.json_agg(TagModel.name).label('tags')
+                       func.json_agg(func.distinct(TagModel.name)).label('tags'),
+                       func.round(func.avg(RatingModel.value), 2).label('avg_rating')
                        )
                 .select_from(UserModel)
-                .join(PhotoModel)#, isouter=True)
+                .join(PhotoModel, isouter=True)
                 .join(RatingModel, isouter=True)
-                .join(photos_tags)
-                .join(TagModel)
+                .join(photos_tags, isouter=True)
+                .join(TagModel, isouter=True)
                 .filter(PhotoModel.id.isnot(None))
                 .group_by(PhotoModel.id,
                           UserModel.username,
@@ -131,15 +117,40 @@ class PhotoRepo:
 
     async def get_photo_page(self, photo_id: int, skip: int, limit: int):
         # todo add tags
+        # todo add rating
+        # todo add comments
+        #  add count of transformations
+        # stmt = (select(PhotoModel.id,
+        #                PhotoModel.image_url,
+        #                PhotoModel.description,
+        #                UserModel.username,
+        #                RatingModel.value)
+        #         .select_from(UserModel)
+        #         .join(PhotoModel, isouter=True)
+        #         .join(RatingModel, isouter=True)
+        #         .filter(PhotoModel.id == photo_id))
+
         stmt = (select(PhotoModel.id,
                        PhotoModel.image_url,
                        PhotoModel.description,
                        UserModel.username,
-                       RatingModel.value)
+                       func.json_agg(func.distinct(TagModel.name)).label('tags'),
+                       func.round(func.avg(RatingModel.value), 2).label('avg_rating')
+                       )
                 .select_from(UserModel)
                 .join(PhotoModel, isouter=True)
                 .join(RatingModel, isouter=True)
-                .filter(PhotoModel.id == photo_id))
+                .join(photos_tags, isouter=True)
+                .join(TagModel, isouter=True)
+                .filter(PhotoModel.id.isnot(None))
+                .group_by(PhotoModel.id,
+                          UserModel.username,
+                          PhotoModel.image_url,
+                          PhotoModel.description,
+                          )
+                .offset(skip)
+                .limit(limit))
+
 
         result = await self.db.execute(stmt)
         return result.first()
