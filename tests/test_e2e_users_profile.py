@@ -29,7 +29,6 @@ async def test_get_current_user(client, get_token):
 
     assert response.status_code == 200 , response.text
     data = response.json()
-    print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%', data)
     assert data['username'] == test_user['username']
     assert data['email'] == test_user['email']
     assert data['avatar'] is None
