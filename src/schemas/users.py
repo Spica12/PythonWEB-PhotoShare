@@ -66,5 +66,6 @@ class TokenSchema(BaseModel):
     # Поки не включаю час створення та оновлення токена, поки не розумію чи це потрібно
 
 
-class RequestEmail(BaseModel):
+class RequestPasswordResetSchema(BaseModel):
     email: EmailStr
+    username: str
