@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.dependencies.database import get_db
-from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
+from src.schemas.users import UserResponse, UserUpdate, AnotherUsers, UserUpdateEmail
 from src.services.auth import auth_service
 
 from src.models.users import UserModel, Roles
@@ -55,15 +55,14 @@ async def get_user(
 
 
 def is_admin(user: UserModel = Depends(auth_service.get_current_user)):
-    if user.role != Roles.admin or user.role != Roles.moderator:
+    if user.role != Roles.admin:
         raise HTTPException(status_code=403, detail="You do not have permission to access this resource.")
     return user
 
 
 @router_users.put(
-    "/{username}/ban", response_model=bool, dependencies=[Depends(is_admin)]
-)
-async def ban_user(username: str, db: AsyncSession = Depends(get_db)):
+    "/{username}", response_model=bool)
+async def admin_manipulation(username: str, is_active: bool, confirmed: bool, role: Roles, db: AsyncSession = Depends(get_db), current_user: UserModel = Depends(is_admin)):
     """
     Method put for username only if admin. Depends will be later.
 
@@ -72,39 +71,43 @@ async def ban_user(username: str, db: AsyncSession = Depends(get_db)):
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    await auth_service.ban_user(username, db)
+    await auth_service.admin_manipulation(username, is_active, confirmed, role, db)
     return True
 
 
-@router_users.put("/my_profile", summary="Change password for a logged in user")
-async def update_current_user(user_change_password_body: UserUpdate,
-                              user: UserModel = Depends(auth_service.get_current_user),
-                              db: AsyncSession = Depends(get_db)):
+@router_users.put("/my_profile", response_model=UserResponse)
+async def update_current_user(
+        user_update: UserUpdateEmail,
+        current_user: UserModel = Depends(auth_service.get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
     """
-    Show profile of current user. Depends will be later.
-
-    All depends will be later
-
-    Need model with all fields excluded is_active, role
+    Update the current user's email and/or avatar.
     """
+    if not current_user:
+        raise HTTPException(status_code=401, detail="User not authenticated")
+
+    auth_service = AuthService()
+
+    if user_update.new_email:
+        current_user.email = user_update.new_email
+
+    if user_update.new_avatar:
+        current_user.avatar = str(user_update.new_avatar)  # Convert Url object to string
+
     try:
-        auth_service.update_user(user.email, user_change_password_body.new_password, db)
-        return {"result": f"{user.username}, your password has been updated!"}
-    except ValueError as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail=f"{e}")  # Помилка клієнта: неправильні дані запиту
+        await db.commit()
+        return {"message": "User profile updated successfully"}
     except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"An unexpected error occurred. Report this "
-                                                                     f"message to support: {e}")  # Помилка клієнта:
-        # внутрішня помилка сервера
+        raise HTTPException(status_code=400, detail=f"Failed to update user profile: {e}")
 
-# @router_users.get("/users/{username}")
-# async def get_user_profile(username: str, current_user: UserModel = Depends(auth_service.get_current_user),
-#                             db: AsyncSession = Depends(get_db)):
-#     if username == current_user.username:
-#         return {"message": "Redirecting to your profile..."}
-#     user = await auth_service.get_user_by_username(username, db)
-#     if not user:
-#         raise HTTPException(status_code=404, detail="User not found.")
-#     return user
+
+@router_users.get("/users/{username}")
+async def redirect_to_my_profile(username: str, current_user: UserModel = Depends(auth_service.get_current_user),
+                                 db: AsyncSession = Depends(get_db)):
+    if username == current_user.username:
+        return RedirectResponse(status_code=status.HTTP_302_FOUND, url="/")
+    user = await auth_service.get_user_by_username(username, db)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    return user

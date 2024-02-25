@@ -66,3 +66,8 @@ class TokenSchema(BaseModel):
 
 class RequestEmail(BaseModel):
     email: EmailStr
+
+
+class UserUpdateEmail(BaseModel):
+    new_email: str
+    avatar: str | None

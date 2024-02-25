@@ -8,12 +8,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 from sqlalchemy import select
 
-from src.models.users import UserModel
+from src.models.users import UserModel, Roles
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
 from src.repositories.users import UserRepo
-from src.schemas.users import UserSchema, UserUpdate
+from src.schemas.users import UserSchema, UserUpdate, UserUpdateEmail
 
 
 class AuthService:
@@ -136,21 +136,27 @@ class AuthService:
     async def confirmed_email(self, user: UserModel, db: AsyncSession):
         await UserRepo(db).confirmed_email(user)
 
-    async def update_user(self, email: str, new_password: str, db: AsyncSession):
+    async def update_user(self, email: str, user_update: UserUpdateEmail, db: AsyncSession):
         try:
+            # Перевіряємо, чи існує користувач з вказаною електронною поштою
             user = await db.execute(select(UserModel).filter(UserModel.email == email))
             user = user.unique().scalar_one_or_none()
-            if user:
-                user.password = auth_service.get_password_hash(new_password)
-                await db.commit()
-                return True
-            else:
-                return False
-        except Exception as e:
-            print(e)
-            return False
 
-    async def ban_user(self, username: str, db: AsyncSession):
+            if not user:
+                return False  # Повертаємо False, якщо користувача не знайдено
+
+            # Оновлюємо електронну пошту та аватар користувача
+            user.email = user_update.new_email
+            user.avatar = user_update.new_avatar
+
+            # Зберігаємо зміни до бази даних
+            await db.commit()
+            return True  # Повертаємо True, щоб показати успішне оновлення користувача
+
+        except Exception as e:
+            return False  # Повертаємо False у випадку будь-якої помилки
+
+    async def admin_manipulation(self, username: str, is_active: bool, confirmed: bool, role: Roles, db: AsyncSession):
         stmt = select(UserModel).filter_by(username=username)
         user = await db.execute(stmt)
         user = user.scalar_one_or_none()
@@ -159,7 +165,9 @@ class AuthService:
                 status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND
             )
         else:
-            user.is_active = False
+            user.is_active = is_active
+            user.confirmed = confirmed
+            user.role = role
             await db.commit()
             return True
 
