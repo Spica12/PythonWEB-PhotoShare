@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.services.roles import RoleChecker
 
 from src.dependencies.database import get_db
 from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
-from src.models.users import UserModel
+from src.models.users import Roles, UserModel
 from src.services.auth import AuthService
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
@@ -17,9 +18,7 @@ async def get_current_user(
 ):
     """
     Endpoint to retrieve the information of the currently authenticated user.
-
     All depends will be later
-
     Need model with all fields excludes password, is_active. Can show the user role (admin|moderator|user).
     """
     return user
@@ -44,7 +43,9 @@ async def get_user(
 
 
 @router_users.put(
-    "/{username}", response_model=None, dependencies=None, status_code=None
+    "/{username}",
+    response_model=None,
+    dependencies=[Depends(RoleChecker([Roles.admin]))],
 )
 async def update_user(db: AsyncSession = Depends(get_db)):
     """
@@ -55,9 +56,7 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    pass
-
-
+    return {'message': 'ok'}
 
 
 @router_users.put(

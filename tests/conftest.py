@@ -81,5 +81,5 @@ def client():
 
 @pytest_asyncio.fixture()
 async def get_token():
-    token = await auth_service.create_access_token(data={"sub": test_user["email"]})
+    token = await auth_service.create_access_token(test_user["email"])
     return token
