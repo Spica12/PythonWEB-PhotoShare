@@ -61,3 +61,9 @@ class TokenSchema(BaseModel):
     # updated_at: datetime
 
     # Поки не включаю час створення та оновлення токена, поки не розумію чи це потрібно
+
+    
+class RequestPasswordResetSchema(BaseModel):
+    email: EmailStr
+    username: str
+

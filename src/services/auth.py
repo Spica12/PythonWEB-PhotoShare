@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime, timedelta
+import secrets
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -35,6 +36,11 @@ class AuthService:
 
     def get_password_hash(self, password: str):
         return self.pwd_context.hash(password)
+
+    def generate_password(self):
+        length = 12
+        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        return ''.join(secrets.choice(alphabet) for i in range(length))
 
     def verify_password(self, plain_password, hashed_pasword):
         return self.pwd_context.verify(plain_password, hashed_pasword)
@@ -128,6 +134,9 @@ class AuthService:
 
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None, db: AsyncSession):
         await UserRepo(db).update_refresh_token(user, refresh_token)
+
+    async def update_password(self, user_id: UUID, new_password_hash: str, db: AsyncSession):
+        await UserRepo(db).update_password(user_id, new_password_hash)
 
     async def add_token_to_blacklist(self, token: str, db: AsyncSession):
         await UserRepo(db).add_token_to_blacklist(token)

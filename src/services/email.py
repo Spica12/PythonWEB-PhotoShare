@@ -22,17 +22,60 @@ class EmailService:
     )
     fm = FastMail(conf)
 
-
     async def send_varification_mail(self, email: EmailStr, username: str, host: str):
         try:
             token_verification = auth_service.create_email_token({"sub": email})
             message = MessageSchema(
                 subject="Confirm your email",
                 recipients=[email],
-                template_body={"host": host, "username": username, "token": token_verification},
-                subtype=MessageType.html
+                template_body={
+                    "host": host,
+                    "username": username,
+                    "token": token_verification,
+                },
+                subtype=MessageType.html,
             )
             await self.fm.send_message(message, template_name="verify_email.html")
+
+        except ConnectionErrors as err:
+            print(err)
+
+    async def send_request_password_mail(
+        self, email: EmailStr, username: str, host: str
+    ):
+        try:
+            token_verification = auth_service.create_email_token({"sub": email})
+            message = MessageSchema(
+                subject="Request psw",
+                recipients=[email],
+                template_body={
+                    "host": host,
+                    "username": username,
+                    "token": token_verification,
+                },
+                subtype=MessageType.html,
+            )
+            await self.fm.send_message(
+                message, template_name="request_password_reset.html"
+            )
+
+        except ConnectionErrors as err:
+            print(err)
+
+    async def send_new_password_mail(
+        self, email: EmailStr, username: str, new_password: str,
+    ):
+        try:
+            message = MessageSchema(
+                subject="New psw",
+                recipients=[email],
+                template_body={
+                    "username": username,
+                    "new_psw": new_password,
+                },
+                subtype=MessageType.html,
+            )
+            await self.fm.send_message(message, template_name="new_password.html")
 
         except ConnectionErrors as err:
             print(err)

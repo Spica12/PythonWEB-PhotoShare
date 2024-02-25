@@ -37,9 +37,7 @@ class UserRepo:
         users = await self.db.execute(stmt)
         users = users.scalars().all()
         # Create new user
-        new_user = UserModel(
-            **body.model_dump(), avatar=None
-        )
+        new_user = UserModel(**body.model_dump(), avatar=None)
         # Check if users exist
         if not users:
             new_user.confirmed = True
@@ -55,7 +53,17 @@ class UserRepo:
         token = token.scalar_one_or_none()
         return token
 
-    async def update_refresh_token(self, user: UserModel, refresh_token: TokenModel | None):
+    async def update_password(self, user_id: UUID, new_password_hash: str):
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.password = new_password_hash
+        await self.db.commit()
+        await self.db.refresh(user)
+
+    async def update_refresh_token(
+        self, user: UserModel, refresh_token: TokenModel | None
+    ):
         stmt = select(TokenModel).filter_by(user_id=user.id)
         token = await self.db.execute(stmt)
         token = token.scalar_one_or_none()
