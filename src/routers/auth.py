@@ -43,8 +43,13 @@ async def register(
     db: AsyncSession = Depends(get_db),
 ):
     # need response model and body schema
-    exist_user = await auth_service.get_user_by_email(body.email, db=db)
-    if exist_user:
+    exist_user_by_email = await auth_service.get_user_by_email(body.email, db=db)
+    if exist_user_by_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST
+        )
+    exist_user_by_username = await auth_service.get_user_by_username(body.username, db=db)
+    if exist_user_by_username:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST
         )
