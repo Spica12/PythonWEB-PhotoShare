@@ -6,7 +6,7 @@ from uuid import UUID
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
 
 # schemas
-from src.schemas.users import UserSchema
+from src.schemas.users import UserSchema, UserUpdateByAdminSchema
 
 
 class UserRepo:
@@ -119,12 +119,15 @@ class UserRepo:
         await self.db.refresh(user)
         return user
 
-    async def update_user_by_admin(self, user_id: UUID, is_active: bool, roles: Roles) -> UserModel:
+    async def update_user_by_admin(
+        self, user_id: UUID, body: UserUpdateByAdminSchema
+    ) -> UserModel:
         stmt = select(UserModel).filter_by(id=user_id)
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
-        user.is_active = is_active
-        user.role = roles
+        user.is_active = body.is_active
+        user.confirmed = body.confirmed
+        user.role = body.role
         await self.db.commit()
         await self.db.refresh(user)
         return user
