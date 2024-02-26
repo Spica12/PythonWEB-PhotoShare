@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.users import UserModel
+from src.models.users import Roles, UserModel
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
@@ -180,6 +180,10 @@ class AuthService:
 
     async def update_avatar(self, user_id: UUID, avatar_url: str, db: AsyncSession) -> UserModel:
         user = await UserRepo(db).update_avatar(user_id, avatar_url)
+        return user
+
+    async def update_user_by_admin(self, user_id: UUID, is_active: bool, role: Roles, db: AsyncSession) -> UserModel:
+        user = await UserRepo(db).update_user_by_admin(user_id, is_active, role)
         return user
 
 auth_service = AuthService()

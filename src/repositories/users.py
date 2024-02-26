@@ -118,3 +118,13 @@ class UserRepo:
         await self.db.commit()
         await self.db.refresh(user)
         return user
+
+    async def update_user_by_admin(self, user_id: UUID, is_active: bool, roles: Roles) -> UserModel:
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.is_active = is_active
+        user.role = roles
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user

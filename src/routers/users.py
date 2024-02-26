@@ -8,7 +8,7 @@ from src.schemas.users import (
     UserResponse,
     UserUpdateEmailSchema,
     UserUpdateAvatarSchema,
-    AnotherUsers,
+    UserUpdateByAdminSchema,
 )
 from src.services.auth import auth_service
 from src.models.users import Roles, UserModel
@@ -99,7 +99,12 @@ async def get_user(
     response_model=None,
     dependencies=[Depends(RoleChecker([Roles.admin]))],
 )
-async def update_user(db: AsyncSession = Depends(get_db)):
+async def update_user(
+    username: str,
+    body: UserUpdateByAdminSchema = Depends(),
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
     """
     Method put for username only if admin. Depends will be later.
 
@@ -108,4 +113,12 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
-    return {"message": "ok"}
+    user = await auth_service.get_user_by_username(username, db)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
+        )
+    user = await auth_service.update_user_by_admin(user.id, body.is_active, body.role, db)
+
+
+    return user

@@ -193,3 +193,151 @@ async def test_get_user_change_avatar(client, monkeypatch):
     assert data["role"] == user_data["role"]
     assert data["confirmed"] == user_data["confirmed"]
     assert data["is_active"] == user_data["is_active"]
+
+
+@pytest.mark.asyncio
+async def test_update_user_is_active_by_admin(client):
+    async with TestingSessionLocal() as session:
+
+        hash_password = auth_service.get_password_hash("admin_password")
+        admin_data = {
+            'username': 'admin_username',
+            'email': 'admin_email@example.com',
+            'password': hash_password,
+            'avatar': 'admin_avatar',
+            'role': 'admin',
+            'confirmed': True,
+            'is_active': True
+        }
+        hash_password = auth_service.get_password_hash("user_password")
+        user_data2 = {
+            'username': 'user_username',
+            'email': 'user_email@example.com',
+            'password': hash_password,
+            'avatar': 'user_avatar',
+            'role': 'users',
+            'confirmed': True,
+            'is_active': True
+        }
+        admin = UserModel(**admin_data)
+        user = UserModel(**user_data2)
+        session.add(admin)
+        session.add(user)
+        await session.commit()
+
+    change_data_for_user = {
+        "is_active": False,
+        'role': 'users'
+    }
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data2["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data['username'] == 'user_username'
+    assert data['email'] == 'user_email@example.com'
+    assert data['avatar'] == 'user_avatar'
+    assert data['role'] == change_data_for_user["role"]
+    assert data["is_active"] is change_data_for_user["is_active"]
+    assert data["confirmed"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_user_is_active_and_moderator_by_admin(client):
+    admin_data = {
+        'username': 'admin_username',
+        'email': 'admin_email@example.com',
+    }
+    user_data = {
+        'username': 'user_username',
+        'email': 'user_email@example.com',
+    }
+
+    change_data_for_user = {
+        "is_active": False,
+        'role': 'moderator'
+    }
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data['username'] == 'user_username'
+    assert data['email'] == 'user_email@example.com'
+    assert data['avatar'] == 'user_avatar'
+    assert data['role'] == change_data_for_user["role"]
+    assert data["is_active"] is change_data_for_user["is_active"]
+    assert data["confirmed"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_user_is_active_and_admin_by_admin(client):
+    admin_data = {
+        'username': 'admin_username',
+        'email': 'admin_email@example.com',
+    }
+    user_data = {
+        'username': 'user_username',
+        'email': 'user_email@example.com',
+    }
+
+    change_data_for_user = {
+        "is_active": True,
+        'role': 'admin'
+    }
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data['username'] == 'user_username'
+    assert data['email'] == 'user_email@example.com'
+    assert data['avatar'] == 'user_avatar'
+    assert data['role'] == change_data_for_user["role"]
+    assert data["is_active"] is change_data_for_user["is_active"]
+    assert data["confirmed"] is True
+
+
+@pytest.mark.asyncio
+async def test_update_user_is_active_and_admin_by_admin(client):
+    admin_data = {
+        'username': 'admin_username',
+        'email': 'admin_email@example.com',
+    }
+    user_data = {
+        'username': 'user_username',
+        'email': 'user_email@example.com',
+    }
+
+    change_data_for_user = {
+        "is_active": None,
+        'role': None
+    }
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 422, response.text

@@ -47,6 +47,11 @@ class UserUpdateAvatarSchema(BaseModel):
     confirm_password: str = Field(max_length=255)
 
 
+class UserUpdateByAdminSchema(BaseModel):
+    is_active: bool = True
+    role: Roles = Roles.users
+
+
 class AnotherUsers(RequestEmail, UserNameSchema):
     # username: str
     # email: EmailStr
