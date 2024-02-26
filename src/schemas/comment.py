@@ -21,6 +21,6 @@ class CommentResponseShort(CommentSchema):
 
 
 class CommentResponseIntegratedSchema(CommentSchema):
-    # todo change uid by username
+    id: int | None
     username: str | None
     updated_at: datetime | None
