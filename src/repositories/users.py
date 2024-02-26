@@ -100,3 +100,12 @@ class UserRepo:
     async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True
         await self.db.commit()
+
+    async def update_avatar(self, user_id: UUID, avatar_url: str) -> UserModel:
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.avatar = avatar_url
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user

@@ -174,5 +174,8 @@ class AuthService:
         await self.add_token_to_blacklist(token=token, db=db)
         return "logout"
 
+    async def update_avatar(self, user_id: UUID, avatar_url: str, db: AsyncSession) -> UserModel:
+        user = await UserRepo(db).update_avatar(user_id, avatar_url)
+        return user
 
 auth_service = AuthService()
