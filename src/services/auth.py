@@ -14,7 +14,7 @@ from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
 from src.repositories.users import UserRepo
-from src.schemas.users import UserSchema
+from src.schemas.users import UserSchema, UserUpdateByAdminSchema
 
 
 class AuthService:
@@ -182,8 +182,11 @@ class AuthService:
         user = await UserRepo(db).update_avatar(user_id, avatar_url)
         return user
 
-    async def update_user_by_admin(self, user_id: UUID, is_active: bool, role: Roles, db: AsyncSession) -> UserModel:
-        user = await UserRepo(db).update_user_by_admin(user_id, is_active, role)
+    async def update_user_by_admin(
+        self, user_id: UUID, body: UserUpdateByAdminSchema, db: AsyncSession
+    ) -> UserModel:
+        user = await UserRepo(db).update_user_by_admin(user_id, body)
         return user
+
 
 auth_service = AuthService()

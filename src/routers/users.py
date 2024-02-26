@@ -125,7 +125,7 @@ async def update_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
-    user = await auth_service.update_user_by_admin(user.id, body.is_active, body.role, db)
+    user = await auth_service.update_user_by_admin(user.id, body, db)
 
 
     return user

@@ -50,6 +50,7 @@ class UserUpdateAvatarSchema(BaseModel):
 class UserUpdateByAdminSchema(BaseModel):
     is_active: bool = True
     role: Roles = Roles.users
+    confirmed: bool = True
 
 
 class AnotherUsers(RequestEmail, UserNameSchema):
