@@ -13,7 +13,11 @@ class TagService:
     async def add_tags_to_photo(self, photo_id, tags: list[str]) -> None:
         await self.repo.add_tags_to_photo(photo_id, tags)
 
-def normalize_tag(tag: str) -> str:
-    # split the string with a comma and replace the spaces with "_"
-    normalized_tag = tag.replace(' ', '_').lower().strip()
-    return normalized_tag
+    def normalize_list_of_tag(body_tags: str) -> str:
+        # split the string with a comma and replace the spaces with "_"
+        list_tags = []
+        for tag in body_tags.split(","):
+            tag = tag.replace(' ', '_').lower().strip()
+            list_tags.append(tag)
+
+        return list_tags
