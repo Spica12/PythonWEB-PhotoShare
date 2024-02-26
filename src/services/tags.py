@@ -18,6 +18,7 @@ class TagService:
         list_tags = []
         for tag in body_tags.split(","):
             tag = tag.replace(' ', '_').lower().strip()
-            list_tags.append(tag)
+            if len(tag) > 0:
+                list_tags.append(tag)
 
         return list_tags
