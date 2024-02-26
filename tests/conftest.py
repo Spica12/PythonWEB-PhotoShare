@@ -24,6 +24,17 @@ from src.services.auth import auth_service
 # CREATE DATABASE test;
 # ------------------------------------------------------------------------------------
 
+# ------------------------------------------------------------------------------------
+# TODO : Check with pytest-cov
+# ------------------------------------------------------------------------------------
+#    HTML
+# pytest -v --cov=./src tests/ --cov-report html tests/
+#
+#    Terminal
+# pytest -vs --cov-report term --cov=./src tests/
+# ------------------------------------------------------------------------------------
+
+
 load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DB_URL")
 
