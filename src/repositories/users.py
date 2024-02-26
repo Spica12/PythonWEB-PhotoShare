@@ -47,6 +47,15 @@ class UserRepo:
         await self.db.refresh(new_user)
         return new_user
 
+    async def change_email(self, user_id: UUID, new_email: str):
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.email = new_email
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
     async def get_refresh_token_by_user(self, user: UserModel):
         stmt = select(TokenModel).filter_by(user_id=user.id)
         token = await self.db.execute(stmt)
@@ -100,3 +109,22 @@ class UserRepo:
     async def confirmed_email(self, user: UserModel) -> None:
         user.confirmed = True
         await self.db.commit()
+
+    async def update_avatar(self, user_id: UUID, avatar_url: str) -> UserModel:
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.avatar = avatar_url
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
+
+    async def update_user_by_admin(self, user_id: UUID, is_active: bool, roles: Roles) -> UserModel:
+        stmt = select(UserModel).filter_by(id=user_id)
+        user = await self.db.execute(stmt)
+        user = user.scalar_one_or_none()
+        user.is_active = is_active
+        user.role = roles
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user

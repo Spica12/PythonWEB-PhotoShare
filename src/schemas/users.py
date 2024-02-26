@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Optional
 import uuid
+from fastapi import File, UploadFile
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
 from src.models.users import Roles
@@ -34,12 +35,21 @@ class UserResponse(RequestEmail, UserNameSchema):
         from_attributes = True
 
 
-class UserUpdate(UserSchema):
+class UserUpdateEmailSchema(BaseModel):
     # Validation of user input during profile update
-    old_password: Optional[str] = None
-    new_password: Optional[str] = None
-    confirm_password: Optional[str] = None
-    avatar: Optional[str] = None
+    email: EmailStr = Field(max_length=255)
+    confirm_password: str = Field(max_length=255)
+
+
+class UserUpdateAvatarSchema(BaseModel):
+    # Validation of user input during profile update
+    avatar: UploadFile = File()
+    confirm_password: str = Field(max_length=255)
+
+
+class UserUpdateByAdminSchema(BaseModel):
+    is_active: bool = True
+    role: Roles = Roles.users
 
 
 class AnotherUsers(RequestEmail, UserNameSchema):
@@ -62,8 +72,7 @@ class TokenSchema(BaseModel):
 
     # Поки не включаю час створення та оновлення токена, поки не розумію чи це потрібно
 
-    
+
 class RequestPasswordResetSchema(BaseModel):
     email: EmailStr
     username: str
-

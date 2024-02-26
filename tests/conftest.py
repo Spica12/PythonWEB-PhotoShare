@@ -12,9 +12,17 @@ from sqlalchemy.pool import NullPool
 from main import app
 from src.dependencies.database import get_db
 from src.models.base import Base
-from src.models.users import UserModel
+from src.models.users import  UserModel
 from src.services.auth import auth_service
 
+# ------------------------------------------------------------------------------------
+# TODO : use docker
+# ------------------------------------------------------------------------------------
+# docker run --name pythoweb-photoshare -e POSTGRES_PASSWORD=password -p 5432:5432 -d postgres
+# docker exec -it pythoweb-photoshare bash
+# psql -U postgres
+# CREATE DATABASE test;
+# ------------------------------------------------------------------------------------
 
 load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("TEST_DB_URL")
@@ -34,6 +42,10 @@ test_user = {
     "username": "conf_test",
     "email": "conf_user@example.com",
     "password": "conf_testpassword",
+    "avatar": "conf_testavatar",
+    'role': 'admin',
+    'confirmed': True,
+    'is_active': True
 }
 
 
@@ -47,13 +59,12 @@ def init_moduls_wrap():
             await conn.run_sync(Base.metadata.create_all)
 
         async with TestingSessionLocal() as session:
-            hash_password = auth_service.get_password_hash(test_user["password"])
 
-            current_user = UserModel(
-                username=test_user["username"],
-                email=test_user["email"],
-                password=hash_password,
-            )
+            hash_password = auth_service.get_password_hash(test_user["password"])
+            copy_test_user = test_user.copy()
+            copy_test_user["password"] = hash_password
+
+            current_user = UserModel(**copy_test_user)
             session.add(current_user)
             await session.commit()
 
@@ -81,5 +92,5 @@ def client():
 
 @pytest_asyncio.fixture()
 async def get_token():
-    token = await auth_service.create_access_token(data={"sub": test_user["email"]})
+    token = await auth_service.create_access_token(test_user["email"])
     return token

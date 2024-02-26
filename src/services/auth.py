@@ -9,7 +9,7 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.users import UserModel
+from src.models.users import Roles, UserModel
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
@@ -65,6 +65,10 @@ class AuthService:
     async def check_access_token_blacklist(self, token, db: AsyncSession):
         blacklist = await UserRepo(db).get_token_blacklist(token)
         return blacklist
+
+    async def change_email(self, user_id: UUID, new_email: str, db: AsyncSession):
+        user = await UserRepo(db).change_email(user_id, new_email)
+        return user
 
     async def extract_token_data(self, token, db: AsyncSession):
         # double usage of code, separate func
@@ -174,5 +178,12 @@ class AuthService:
         await self.add_token_to_blacklist(token=token, db=db)
         return "logout"
 
+    async def update_avatar(self, user_id: UUID, avatar_url: str, db: AsyncSession) -> UserModel:
+        user = await UserRepo(db).update_avatar(user_id, avatar_url)
+        return user
+
+    async def update_user_by_admin(self, user_id: UUID, is_active: bool, role: Roles, db: AsyncSession) -> UserModel:
+        user = await UserRepo(db).update_user_by_admin(user_id, is_active, role)
+        return user
 
 auth_service = AuthService()

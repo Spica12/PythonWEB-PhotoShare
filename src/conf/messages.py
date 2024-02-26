@@ -23,3 +23,5 @@ TRANSFORMED_PHOTOS_NOT_FOUND = "Transformed photos not found"
 TOO_MANY_TAGS = "Too many tags. Maximum 5 tags allowed"
 PASSWORD_RESET_REQUEST_SENT = "Password reset request sent"
 NEW_PASSWORD_SENT = "New password sent"
+
+NOT_AUTHENTICATED = "Not authenticated"
