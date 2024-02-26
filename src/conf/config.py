@@ -6,12 +6,11 @@ from pydantic_settings import BaseSettings
 # TODO Testing
 import logging
 # logging global rules
-LOG_DIR = "src/logs"
 logging.basicConfig(
     format="%(asctime)s %(message)s",
     level=logging.INFO,
     handlers=[
-        logging.FileHandler(f"{LOG_DIR}/test.log"),
+        logging.FileHandler(f"test.log"),
         # logging.StreamHandler()
     ],
 )
