@@ -42,10 +42,17 @@ async def update_email_current_user(
     current_user: UserModel = Depends(auth_service.get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    exist_user_by_email = await auth_service.get_user_by_email(body.email, db=db)
+    if exist_user_by_email:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=messages.EMAIL_IS_ALREADY_BUSY
+        )
+
     if not auth_service.verify_password(body.confirm_password, current_user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_PASSWORD
         )
+
     if body.email:
         current_user = await auth_service.change_email(current_user.id, body.email, db)
 
