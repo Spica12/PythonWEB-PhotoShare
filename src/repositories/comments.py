@@ -1,9 +1,12 @@
+import logging
+
 from fastapi import Depends
 from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
 from src.models.photos import CommentModel
+from src.models.users import UserModel
 
 
 class CommentRepo:
@@ -18,14 +21,25 @@ class CommentRepo:
         return new_comment
 
     async def get_all_comments(self, photo_id: int, skip: int, limit: int):
+        # add username
         stmt = (
-            select(CommentModel)
+            select(CommentModel.id,
+                   CommentModel.content,
+                   CommentModel.updated_at,
+                   UserModel.username)
+            # .select_from(UserModel)
+            .join(CommentModel)#, isouter=True)
             .filter_by(photo_id=photo_id)
+            .group_by(CommentModel.id,
+                      UserModel.username,
+                      CommentModel.content,
+                      CommentModel.updated_at,
+                      )
             .offset(skip)
             .limit(limit)
         )
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        return result.fetchall()
 
     async def get_comment(self,  photo_id: int, comment_id: int):
         # to check if object exists before edit or delete

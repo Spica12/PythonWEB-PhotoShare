@@ -109,27 +109,10 @@ class PhotoRepo:
                 .offset(skip)
                 .limit(limit))
 
-        # todo remove logging
-        logging.info(f"STMT: {stmt}")
         result = await self.db.execute(stmt)
-        logging.info(f"Result:  {result}")
         return result
 
     async def get_photo_page(self, photo_id: int, skip: int, limit: int):
-        # todo add tags
-        # todo add rating
-        # todo add comments
-        #  add count of transformations
-        # stmt = (select(PhotoModel.id,
-        #                PhotoModel.image_url,
-        #                PhotoModel.description,
-        #                UserModel.username,
-        #                RatingModel.value)
-        #         .select_from(UserModel)
-        #         .join(PhotoModel, isouter=True)
-        #         .join(RatingModel, isouter=True)
-        #         .filter(PhotoModel.id == photo_id))
-
         stmt = (select(PhotoModel.id,
                        PhotoModel.image_url,
                        PhotoModel.description,
@@ -142,15 +125,12 @@ class PhotoRepo:
                 .join(RatingModel, isouter=True)
                 .join(photos_tags, isouter=True)
                 .join(TagModel, isouter=True)
-                .filter(PhotoModel.id.isnot(None))
+                .filter(PhotoModel.id == photo_id)
                 .group_by(PhotoModel.id,
                           UserModel.username,
                           PhotoModel.image_url,
                           PhotoModel.description,
-                          )
-                .offset(skip)
-                .limit(limit))
-
+                          ))
 
         result = await self.db.execute(stmt)
         return result.first()
