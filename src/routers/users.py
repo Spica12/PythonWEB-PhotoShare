@@ -7,6 +7,7 @@ from src.schemas.users import UserResponse, UserUpdate, AnotherUsers
 from src.services.auth import auth_service
 from src.models.users import Roles, UserModel
 from src.services.auth import AuthService
+from src.conf import messages
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
 
@@ -37,9 +38,24 @@ async def get_user(
     user_info = await auth_service.get_user_by_username(username, db)
     if not user_info:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User not found."
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
     return user_info
+
+
+@router_users.put(
+    "/my_profile", response_model=None, dependencies=None, status_code=None
+)
+async def update_current_user():
+    """
+    Show profile of current user. Depends will be later.
+
+    All depends will be later
+
+    Need model with all fields excluded is_active, role
+    """
+    pass
+
 
 
 @router_users.put(
@@ -57,17 +73,3 @@ async def update_user(db: AsyncSession = Depends(get_db)):
     Show everything about user (excludes password), can change only: is_active, role
     """
     return {'message': 'ok'}
-
-
-@router_users.put(
-    "/my_profile", response_model=None, dependencies=None, status_code=None
-)
-async def update_current_user():
-    """
-    Show profile of current user. Depends will be later.
-
-    All depends will be later
-
-    Need model with all fields excluded is_active, role
-    """
-    pass
