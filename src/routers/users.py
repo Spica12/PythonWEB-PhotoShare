@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Security, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.cloudinary import CloudinaryService
 from src.services.roles import RoleChecker
@@ -46,25 +46,8 @@ async def update_email_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_PASSWORD
         )
-
     if body.email:
         current_user = await auth_service.change_email(current_user.id, body.email, db)
-    # if body.old_password and body.new_password:
-    #     if body.old_password != body.confirm_password:
-    #         raise HTTPException(
-    #             status_code=status.HTTP_400_BAD_REQUEST,
-    #             detail=messages.OLD_AND_NEW_PASSWORD_NOT_MATCH,
-    #         )
-    #     body.confirm_password = auth_service.get_password_hash(body.confirm_password)
-    #     current_user = await auth_service.update_password(
-    #         current_user.id, body.confirm_password, db
-    #     )
-
-    # if body.avatar:
-    #     photo_cloud_url = CloudinaryService().upload_avatar(body.file, current_user.id)
-    #     current_user = await auth_service.update_avatar(
-    #         current_user.id, photo_cloud_url, db
-    #     )
 
     return current_user
 

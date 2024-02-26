@@ -66,6 +66,10 @@ class AuthService:
         blacklist = await UserRepo(db).get_token_blacklist(token)
         return blacklist
 
+    async def change_email(self, user_id: UUID, new_email: str, db: AsyncSession):
+        user = await UserRepo(db).change_email(user_id, new_email)
+        return user
+
     async def extract_token_data(self, token, db: AsyncSession):
         # double usage of code, separate func
         # check if we can use token (not in blacklist)

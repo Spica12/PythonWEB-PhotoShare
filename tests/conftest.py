@@ -12,7 +12,7 @@ from sqlalchemy.pool import NullPool
 from main import app
 from src.dependencies.database import get_db
 from src.models.base import Base
-from src.models.users import UserModel
+from src.models.users import  UserModel
 from src.services.auth import auth_service
 
 # ------------------------------------------------------------------------------------
@@ -42,6 +42,10 @@ test_user = {
     "username": "conf_test",
     "email": "conf_user@example.com",
     "password": "conf_testpassword",
+    "avatar": "conf_testavatar",
+    'role': 'admin',
+    'confirmed': True,
+    'is_active': True
 }
 
 
@@ -55,13 +59,12 @@ def init_moduls_wrap():
             await conn.run_sync(Base.metadata.create_all)
 
         async with TestingSessionLocal() as session:
-            hash_password = auth_service.get_password_hash(test_user["password"])
 
-            current_user = UserModel(
-                username=test_user["username"],
-                email=test_user["email"],
-                password=hash_password,
-            )
+            hash_password = auth_service.get_password_hash(test_user["password"])
+            copy_test_user = test_user.copy()
+            copy_test_user["password"] = hash_password
+
+            current_user = UserModel(**copy_test_user)
             session.add(current_user)
             await session.commit()
 
