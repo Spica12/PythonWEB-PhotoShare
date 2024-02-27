@@ -1,7 +1,7 @@
 import json
 from unittest.mock import Mock
 import pytest
-from starlette import status
+from fastapi import status
 from fastapi.security import OAuth2PasswordRequestForm
 from src.models.users import UserModel
 from src.conf import messages
