@@ -205,3 +205,4 @@ async def test_upload_photo_without_tags(client, get_token, monkeypatch):
 
 # @pytest.mark.asyncio
 # async def test_show_all_photos(client):
+#     ..

@@ -46,26 +46,6 @@ test_user = {
     'is_active': True
 }
 
-blocked_user = {
-    "username": "test_user",
-    "email": "blocked_user@example.com",
-    "password": "blocked_user",
-    "avatar": "test_testavatar",
-    'role': 'users',
-    'confirmed': True,
-    'is_active': False
-}
-
-unconfirmed_user = {
-    "username": "real_user",
-    "email": "unconfirmed_user@example.com",
-    "password": "test_testpassword",
-    "avatar": "user_testavatar",
-    'role': 'users',
-    'confirmed': False,
-    'is_active': True
-}
-
 
 @pytest.fixture(scope="module", autouse=True)
 def init_moduls_wrap():
@@ -103,8 +83,42 @@ def client():
     client = TestClient(app)
     yield client
 
+@pytest_asyncio.fixture()
+async def get_token():
+    token = await auth_service.create_access_token(test_user["email"])
+    return token
 
-@pytest.fixture(scope="module")
+
+blocked_user = {
+        "username": "blocked_user@example.com",
+        "email": "blocked_user@example.com",
+        "password": "test_testpassword",
+        "confirmed": True,
+        "is_active": False,
+        "role": "users",
+    }
+
+unconfirmed_user_data = {
+    "username": "unconfirmed_user@example.com",
+    "email": "unconfirmed_user@example.com",
+    "password": "test_testpassword",
+    "confirmed": False,
+    "is_active": True,
+    "role": "users",
+}
+
+confirmed_user_data = {
+    "username": "confirmed_user@example.com",
+    "email": "confirmed_user@example.com",
+    "password": "test_testpassword",
+    "confirmed": True,
+    "is_active": True,
+    "role": "users",
+}
+
+
+
+@pytest.fixture()
 def create_blocked_user():
     async def _create_blocked_user():
         async with TestingSessionLocal() as session:
@@ -116,25 +130,34 @@ def create_blocked_user():
             session.add(current_user)
             await session.commit()
 
-    return _create_blocked_user
+    asyncio.run(_create_blocked_user())
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def create_unconfirmed_user():
     async def _create_unconfirmed_user():
         async with TestingSessionLocal() as session:
-            hash_password = auth_service.get_password_hash(unconfirmed_user["password"])
-            copy_unconfirmed_user = unconfirmed_user.copy()
-            copy_unconfirmed_user["password"] = hash_password
+            hash_password = auth_service.get_password_hash(unconfirmed_user_data["password"])
+            copy_unconfirmed_user_data = unconfirmed_user_data.copy()
+            copy_unconfirmed_user_data["password"] = hash_password
 
-            current_user = UserModel(**copy_unconfirmed_user)
+            current_user = UserModel(**copy_unconfirmed_user_data)
             session.add(current_user)
             await session.commit()
 
-    return _create_unconfirmed_user
+    asyncio.run(_create_unconfirmed_user())
 
 
-@pytest_asyncio.fixture()
-async def get_token():
-    token = await auth_service.create_access_token(test_user["email"])
-    return token
+@pytest.fixture()
+def create_confirmed_user():
+    async def _create_confirmed_user():
+        async with TestingSessionLocal() as session:
+            hash_password = auth_service.get_password_hash(confirmed_user_data["password"])
+            copy_confirmed_user_data = confirmed_user_data.copy()
+            copy_confirmed_user_data["password"] = hash_password
+
+            current_user = UserModel(**copy_confirmed_user_data)
+            session.add(current_user)
+            await session.commit()
+
+    asyncio.run(_create_confirmed_user())
