@@ -330,3 +330,63 @@ async def test_update_user_is_active_and_admin_by_admin(client):
     assert data["confirmed"] is True
 
 
+@pytest.mark.asyncio
+async def test_update_user_confirmed_false_by_admin(client):
+    admin_data = {
+        "username": "admin_username",
+        "email": "admin_email@example.com",
+    }
+    user_data = {
+        "username": "user_username",
+        "email": "user_email@example.com",
+    }
+
+    change_data_for_user = {"confirmed": False}
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["username"] == "user_username"
+    assert data["email"] == "user_email@example.com"
+    assert data["avatar"] == "user_avatar"
+    assert data["role"] == "users"
+    assert data["is_active"] is True
+    assert data["confirmed"] is change_data_for_user["confirmed"]
+
+
+@pytest.mark.asyncio
+async def test_update_user_confirmed_false_by_admin(client):
+    admin_data = {
+        "username": "admin_username",
+        "email": "admin_email@example.com",
+    }
+    user_data = {
+        "username": "user_username",
+        "email": "user_email@example.com",
+    }
+
+    change_data_for_user = {"confirmed": True}
+
+    access_token = await auth_service.create_access_token(admin_data["email"])
+
+    response = client.put(
+        f'api/users/{user_data["username"]}',
+        headers={"Authorization": f"Bearer {access_token}"},
+        params=change_data_for_user,
+    )
+
+    assert response.status_code == 200, response.text
+    data = response.json()
+    assert data["username"] == "user_username"
+    assert data["email"] == "user_email@example.com"
+    assert data["avatar"] == "user_avatar"
+    assert data["role"] == "users"
+    assert data["is_active"] is True
+    assert data["confirmed"] is change_data_for_user["confirmed"]
