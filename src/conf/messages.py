@@ -29,3 +29,5 @@ NEW_PASSWORD_SENT = "New password sent"
 NOT_AUTHENTICATED = "Not authenticated"
 EMAIL_IS_ALREADY_BUSY = 'This email is already busy'
 USERNAME_IS_ALREADY_BUSY = 'This username is already busy'
+INVALID_FILE_NOT_IMAGE = 'File is not an image. Only images are allowed'
+TOO_BIG_FILE = "File size is too large. Maximum file size is 10MB"
