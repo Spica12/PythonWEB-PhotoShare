@@ -51,7 +51,7 @@ GET /api/auth/password-reset/{token}
 ```
 POST /api/auth/password-reset
 ``` 
-```
+
 
 Users have three roles: admin, moderator, and user.
 
