@@ -165,3 +165,32 @@ async def test_show_all_photos(client):
     assert response.status_code == status.HTTP_200_OK, response.text
     data = response.json()
     assert len(data) == 3
+
+
+@pytest.mark.asyncio
+async def test_show_photo(client):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(
+            select(UserModel).filter_by(username=test_user["username"])
+        )
+        user = result.scalar_one_or_none()
+    photo_id = 3
+    response = client.get("api/photos", params={"photo_id": photo_id})
+
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+
+
+# @pytest.mark.asyncio
+# async def test_show_photo_not_found(client):
+#     async with TestingSessionLocal() as session:
+#         result = await session.execute(
+#             select(UserModel).filter_by(username=test_user["username"])
+#         )
+#         user = result.scalar_one_or_none()
+#     photo_id = 10
+#     response = client.get("api/photos", params={"photo_id": photo_id})
+
+#     assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
+#     data = response.json()
+#     # assert data['detail'] == messages.PHOTO_NOT_FOUND
