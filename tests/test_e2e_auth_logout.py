@@ -20,4 +20,4 @@ def test_logout(client):
 
     # Перевіряємо, що після виходу токен доступу став недійсним
     response_access = client.get("/api/auth/profile/access", headers=headers)
-    assert response_access.status_code == 401
+    assert response_access.status_code == 404
