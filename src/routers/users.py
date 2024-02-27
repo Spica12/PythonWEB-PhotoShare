@@ -110,7 +110,7 @@ async def update_user(
     username: str,
     body: UserUpdateByAdminSchema = Depends(),
     db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
+    # current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     """
     Method put for username only if admin. Depends will be later.

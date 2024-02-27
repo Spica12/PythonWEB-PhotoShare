@@ -74,7 +74,6 @@ async def show_photos(
     Show for all users, unregistered too
     """
     photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
-    print(request)
     return photos
 
 

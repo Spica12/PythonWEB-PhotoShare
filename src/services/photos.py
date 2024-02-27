@@ -82,6 +82,7 @@ class PhotoService:
         )
         contents = await file.read()
         if len(contents) > config.MAX_FILE_SIZE_BYTES:
+            print(len(contents))
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=messages.TOO_BIG_FILE,
