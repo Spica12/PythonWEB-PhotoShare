@@ -78,7 +78,7 @@ async def login(
     user = await auth_service.get_user_by_email(body.username, db)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_USERNAME
+            status_code=status.HTTP_401_UNAUTHORIZED, detail=messages.INVALID_EMAIL
         )
     if not user.is_active:
         raise HTTPException(
