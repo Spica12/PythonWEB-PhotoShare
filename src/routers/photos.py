@@ -51,6 +51,7 @@ router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
     status_code=status.HTTP_200_OK
 )
 async def show_photos(
+    request: Request,
     limit: Annotated[int, Query(description="Limit photos per page", ge=4, le=20)] = 4,
     skip: Annotated[int, Query(description="Skip number of photos", ge=0)] = 0,
     db: AsyncSession = Depends(get_db)
@@ -65,6 +66,7 @@ async def show_photos(
     Show for all users, unregistered too
     """
     photos = await PhotoService(db).get_all_photo_per_page(skip=skip, limit=limit)
+    print(request)
     return photos
 
 
