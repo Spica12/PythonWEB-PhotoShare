@@ -1,3 +1,4 @@
+from copy import copy
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 
@@ -7,30 +8,12 @@ from src.models.photos import PhotoModel
 from src.models.users import UserModel
 from fastapi import status
 
-from tests.conftest import TestingSessionLocal
+from tests.conftest import TestingSessionLocal, confirmed_user_data
 from src.services.auth import auth_service
 from src.conf import messages
 
 
 from conftest import test_user
-
-
-user1_data = {
-    "username": "user1",
-    "email": "user1@example.com",
-    "password": "test_testpassword",
-    "confirmed": True,
-    "is_active": True,
-    "role": "users",
-}
-user2_data = {
-    "username": "user2",
-    "email": "user2@example.com",
-    "password": "test_testpassword",
-    "confirmed": True,
-    "is_active": True,
-    "role": "users",
-}
 
 
 @pytest.mark.asyncio
@@ -138,40 +121,6 @@ async def test_upload_photo_without_tags(client, get_token, monkeypatch):
         mock_cloudinary_uploader_upload,
     )
 
-
-    # async with TestingSessionLocal() as session:
-    #     hash_password_user1 = auth_service.get_password_hash(user1_data["password"])
-    #     user1 = UserModel(
-    #         username=user1_data["username"],
-    #         email=user1_data["email"],
-    #         password=hash_password_user1,
-    #         confirmed=user1_data["confirmed"],
-    #         is_active=user1_data["is_active"],
-    #         role=user1_data["role"],
-    #     )
-    #     hash_password_user2 = auth_service.get_password_hash(user1_data["password"])
-    #     user2 = UserModel(
-    #         username=user1_data["username"],
-    #         email=user1_data["email"],
-    #         password=hash_password_user2,
-    #         confirmed=user1_data["confirmed"],
-    #         is_active=user1_data["is_active"],
-    #         role=user1_data["role"],
-    #     )
-    #     session.add(user1)
-    #     session.add(user2)
-    #     await session.commit()
-    #     await session.refresh(user1)
-    #     await session.refresh(user2)
-
-    #     for i in range(25):
-    #         photo = PhotoModel(
-    #             user_id=user1.id,
-    #             description=f"test_description_photo{i}",
-    #             image_url=f"test_photo{i}url",
-    #         )
-
-    #         session.add(photo)
     files = {"file": ("test_image.jpg", open(Path("tests") / "test_image.jpg", "rb"))}
     photo1_data = {
         "description": "test_description_photo1",
@@ -203,6 +152,16 @@ async def test_upload_photo_without_tags(client, get_token, monkeypatch):
 
 
 
-# @pytest.mark.asyncio
-# async def test_show_all_photos(client):
-#     ..
+@pytest.mark.asyncio
+async def test_show_all_photos(client):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(
+            select(UserModel).filter_by(username=test_user["username"])
+        )
+        user = result.scalar_one_or_none()
+
+    response = client.get("api/photos")
+
+    assert response.status_code == status.HTTP_200_OK, response.text
+    data = response.json()
+    assert len(data) == 3

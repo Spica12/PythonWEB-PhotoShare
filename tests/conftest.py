@@ -117,7 +117,6 @@ confirmed_user_data = {
 }
 
 
-
 @pytest.fixture()
 def create_blocked_user():
     async def _create_blocked_user():
@@ -149,7 +148,7 @@ def create_unconfirmed_user():
 
 
 @pytest.fixture()
-def create_confirmed_user():
+def create_confirmed_user(name="confirmed_user"):
     async def _create_confirmed_user():
         async with TestingSessionLocal() as session:
             hash_password = auth_service.get_password_hash(confirmed_user_data["password"])
