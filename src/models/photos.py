@@ -49,7 +49,7 @@ class PhotoModel(Base):
     )
     tags: Mapped[list["TagModel"]] = relationship(
         secondary=photos_tags,
-        cascade="all, delete-orphan",
+        cascade="save-update, merge",
         back_populates="photos",
         single_parent=True,
         lazy="joined"

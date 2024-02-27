@@ -115,8 +115,7 @@ async def upload_photo(
     Only for registered users.
     """
     if body.tags:
-        list_tags = body.tags.split(",")
-        body.tags = [tag.strip() for tag in list_tags]
+        body.tags = await TagService(db).normalize_list_of_tag(body.tags)
         if len(body.tags) > 5:
             raise HTTPException(
                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS

@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime, timedelta
+import secrets
 from typing import Optional
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -8,12 +9,12 @@ from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.users import UserModel
+from src.models.users import Roles, UserModel
 from src.conf.config import config
 from src.conf import messages
 from src.dependencies.database import get_db
 from src.repositories.users import UserRepo
-from src.schemas.users import UserSchema
+from src.schemas.users import UserSchema, UserUpdateByAdminSchema
 
 
 class AuthService:
@@ -35,6 +36,11 @@ class AuthService:
 
     def get_password_hash(self, password: str):
         return self.pwd_context.hash(password)
+
+    def generate_password(self):
+        length = 12
+        alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+        return ''.join(secrets.choice(alphabet) for i in range(length))
 
     def verify_password(self, plain_password, hashed_pasword):
         return self.pwd_context.verify(plain_password, hashed_pasword)
@@ -59,6 +65,10 @@ class AuthService:
     async def check_access_token_blacklist(self, token, db: AsyncSession):
         blacklist = await UserRepo(db).get_token_blacklist(token)
         return blacklist
+
+    async def change_email(self, user_id: UUID, new_email: str, db: AsyncSession):
+        user = await UserRepo(db).change_email(user_id, new_email)
+        return user
 
     async def extract_token_data(self, token, db: AsyncSession):
         # double usage of code, separate func
@@ -129,6 +139,9 @@ class AuthService:
     async def update_refresh_token(self, user: UserModel, refresh_token: str | None, db: AsyncSession):
         await UserRepo(db).update_refresh_token(user, refresh_token)
 
+    async def update_password(self, user_id: UUID, new_password_hash: str, db: AsyncSession):
+        await UserRepo(db).update_password(user_id, new_password_hash)
+
     async def add_token_to_blacklist(self, token: str, db: AsyncSession):
         await UserRepo(db).add_token_to_blacklist(token)
 
@@ -164,6 +177,16 @@ class AuthService:
         # adding access token to blacklist
         await self.add_token_to_blacklist(token=token, db=db)
         return "logout"
+
+    async def update_avatar(self, user_id: UUID, avatar_url: str, db: AsyncSession) -> UserModel:
+        user = await UserRepo(db).update_avatar(user_id, avatar_url)
+        return user
+
+    async def update_user_by_admin(
+        self, user_id: UUID, body: UserUpdateByAdminSchema, db: AsyncSession
+    ) -> UserModel:
+        user = await UserRepo(db).update_user_by_admin(user_id, body)
+        return user
 
 
 auth_service = AuthService()
