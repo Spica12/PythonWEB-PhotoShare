@@ -52,12 +52,9 @@ class AnotherUsers(RequestEmail, UserNameSchema):
 
 
 class TokenSchema(BaseModel):
-    # не включаю id, якщо його буде автоматично генерувати база даних.
     # id: int
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
     # created_at: datetime
     # updated_at: datetime
-
-    # Поки не включаю час створення та оновлення токена, поки не розумію чи це потрібно

@@ -14,7 +14,8 @@ logging.basicConfig(
         # logging.StreamHandler()
     ],
 )
-# logging.getLogger("bcrypt").setLevel(logging.ERROR)
+# to shut your bcrypt warnings :)
+logging.getLogger('passlib').setLevel(logging.ERROR)
 
 class Settings(BaseSettings):
     DB_URL: str = "postgresql+asyncpg://postgres:567234@0.0.0.0:5432/abc"

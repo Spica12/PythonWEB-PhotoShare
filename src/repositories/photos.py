@@ -108,7 +108,6 @@ class PhotoRepo:
                           )
                 .offset(skip)
                 .limit(limit))
-
         result = await self.db.execute(stmt)
         return result
 
@@ -131,6 +130,5 @@ class PhotoRepo:
                           PhotoModel.image_url,
                           PhotoModel.description,
                           ))
-
         result = await self.db.execute(stmt)
         return result.first()

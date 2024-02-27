@@ -9,11 +9,7 @@ class CommentSchema(BaseModel):
 
 
 class CommentResponseShort(CommentSchema):
-    # todo change uuuid to username ???
     id: int
-    user_id: UUID
-    photo_id: int
-    created_at: datetime
     updated_at: datetime
 
     class Config:

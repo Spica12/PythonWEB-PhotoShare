@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -5,6 +6,12 @@ from pydantic import BaseModel, Field
 
 class RateSchema(BaseModel):
     value: int
+
+
+class RateExtendedSchema(RateSchema):
+    id: int
+    photo_id: int
+    created_at: datetime
 
 
 class SetRateSchema(RateSchema):
