@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -11,7 +13,6 @@ class RatingService:
         self.repo = RatingRepo(db=db)
 
     async def set_rate(self, photo_id: int, rate: int,  user_id: UUID):
-        # TODO rewrite functionality to make one select with join tables.
         photo_owner = await PhotoRepo(self.repo.db).get_photo_owner(photo_id=photo_id, user_id=user_id)
         if photo_owner is not None:
             # if return None - user is the owner of the photo, can't rate own
@@ -35,10 +36,11 @@ class RatingService:
         result = await self.repo.delete_single_rate(photo_id, user_id)
         return result
 
-    async def get_avg_rate(self, photo_id: int) -> float | None:
-        result = await self.repo.get_avg_rate(photo_id)
-        if result:
-            return round(result, 2)
+    async def get_rates(self, photo_id: int):
+        query = await self.repo.get_rates(photo_id)
+        result = []
+        for item in query:
+            result.append(item._asdict())
         return result
 
 

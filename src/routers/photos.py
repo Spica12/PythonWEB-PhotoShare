@@ -1,13 +1,12 @@
 
-from copy import copy, deepcopy
-from fastapi import (
-    APIRouter, Depends, HTTPException, Path, Query, Request, status,
-    File, Form, UploadFile
-)
+from copy import deepcopy
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from fastapi.responses import RedirectResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from typing import List, Union, Annotated
+from typing import List, Annotated
+
+from src.schemas.comment import CommentResponseShort
 from src.services.tags import TagService
 
 
@@ -24,7 +23,7 @@ from src.schemas import comment
 from src.schemas import rating
 from src.schemas.photos import ImageResponseAfterCreateSchema, ImageSchema, ImageResponseAfterUpdateSchema
 from src.schemas.transform import TransformRequestSchema
-from src.schemas.unified import ImagePageResponseShortSchema, ImagePageResponseFullSchema
+from src.schemas.unified import ImagePageResponseShortSchema, ImagePageResponseFullSchema, ShowAllRateSchema
 
 # services
 from src.services.auth import auth_service
@@ -44,10 +43,6 @@ import logging
 # deprecated routers.
 router_deprecated = APIRouter(prefix="/photos", tags=["DEPRECATED"])
 
-# ================================================================================================================
-# photos section
-# ================================================================================================================
-
 
 @router_photos.get(
     "/",
@@ -61,8 +56,6 @@ async def show_photos(
     db: AsyncSession = Depends(get_db)
 ):
     """
-    TODO OK. Remove this string in release \n
-
     Show all photos. Pagination in query parameters:
         limit = limit photos per page
         skip = skip images from previous pages.
@@ -79,7 +72,7 @@ async def show_photos(
     "/{photo_id}",
     response_model=ImagePageResponseFullSchema,
     dependencies=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_200_OK
 )
 async def show_photo(
         photo_id: Annotated[int, Path(title="Photo ID", ge=1)],
@@ -88,8 +81,6 @@ async def show_photo(
         db: AsyncSession = Depends(get_db)
 ):
     """
-    TODO OK. Remove this string in release
-
     Show photo by id with comments if it is.
     Limit and skip in query parameters is for comments pagination.
 
@@ -115,11 +106,9 @@ async def show_photo(
 async def upload_photo(
     body: ImageSchema = Depends(),
     db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
+    current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
-    TODO OK. Remove this string in release
-
     Upload photos. Description and tags are optional.
     Only 5 tags accepted with ,(coma) separator.
 
@@ -149,22 +138,80 @@ async def upload_photo(
     return new_photo
 
 
+@router_photos.post(
+    "/{photo_id}",
+    response_model=comment.CommentResponseShort,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_comment(
+    photo_id: Annotated[int, Path(description="Photo ID", ge=1)],
+    body: comment.CommentSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    """
+    Add comment to current image
+    Only for registered users
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+    # if photo object in database - we can add comment
+    result = await CommentService(db).add_comment(
+        photo_id=photo_id, comment=body.content, user_id=current_user.id
+    )
+    return result
+
+
+@router_photos.post(
+    "/{photo_id}/set-rate",
+    response_model=rating.RateResponseSchema,
+    dependencies=None,
+    status_code=status.HTTP_201_CREATED,
+)
+async def add_rate(
+    photo_id: Annotated[int, Path(description="Photo ID", ge=1)],
+    body: rating.SetRateSchema,
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user),
+):
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).set_rate(
+        photo_id=photo_id, rate=body.value, user_id=current_user.id
+    )
+
+    # if return None - rate was already set
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail=messages.ALREADY_SET
+        )
+
+    return result
+
+
 @router_photos.delete(
     "/{photo_id}",
     response_model=None,
     dependencies=None,
-    status_code=status.HTTP_204_NO_CONTENT,
+    status_code=status.HTTP_204_NO_CONTENT
 )
 async def delete_photo(
     photo_id: Annotated[int, Path(title="Photo ID", ge=1)],
     select: Annotated[str | None, Query(description="Choose object", enum=['transform', 'comment'])] = None,
     object_id: Annotated[int, Query(description="Choose object ID", ge=1)] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
+    current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
-    TODO OK. Remove this string in release
-
     Delete
     image from db and cloudinary
     or
@@ -232,17 +279,15 @@ async def get_transformed_photos(
     photo_id: Annotated[int, Path(title="Photo ID", ge=1)],
     select: Annotated[str | None, Query(description="Choose action", enum=['url', 'qrcode'])] = None,
     object_id: Annotated[int, Query(description="Choose object ID", ge=1)] = None,
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    TODO OK. Remove this string in release
-
-    Get List of image transformations with default query
+    Get List of photo transformations with default query
 
     For all users, unregistered too.
 
     Get url
-    or show photo by url from qrcode
+    or show photo by url from qrcode (generated in post method)
     for transformation with object_id for photo with photo_id
 
     """
@@ -267,7 +312,7 @@ async def get_transformed_photos(
         if not transformed_photo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+                detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND
             )
 
         if select == "url":
@@ -282,31 +327,20 @@ async def get_transformed_photos(
         else:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=messages.UNKNOWN_PARAMETER,
+                detail=messages.UNKNOWN_PARAMETER
             )
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=messages.UNKNOWN_PARAMETER,
+            detail=messages.UNKNOWN_PARAMETER
         )
-
-
-
-
-
-
-
-# ================================================================================================================
-# TODO remove in release
-# Still in work
-# ================================================================================================================
 
 
 @router_photos.post(
     "/{photo_id}/transform",
     response_model=None,
     dependencies=None,
-    status_code=status.HTTP_201_CREATED,
+    status_code=status.HTTP_201_CREATED
 )
 async def transform_photo(
     photo_id: Annotated[int, Path(title="Photo ID", ge=1)],
@@ -314,10 +348,12 @@ async def transform_photo(
     request: Request,
     select: Annotated[str, Query(description="Choose action", enum=['create', 'qrcode'])] = "create",
     object_id: Annotated[int, Query(description="Choose object ID", ge=1)] = None,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
-
+    Crate photo transformation for current photo or
+    Generate qr code for photo transformation
 
     """
     photo = await PhotoService(db).get_photo_exists(photo_id)
@@ -326,12 +362,13 @@ async def transform_photo(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
 
-    if select == "create":
+    # create transformation only for photo owner
+    if select == "create" and photo.user_id == current_user.id:
         # make transformation with current photo
         try:
             transform_photo_url = CloudinaryService().get_transformed_photo_url(
                 public_id=photo.public_id,
-                request_for_transformation=transformation.model_dump(),
+                request_for_transformation=transformation.model_dump()
             )
             # save transformation url
             new_transformed_photo = await PhotoService(db).add_transformed_photo_to_db(
@@ -341,10 +378,10 @@ async def transform_photo(
         except ValueError:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=messages.UNKNOWN_PARAMETER,
+                detail=messages.UNKNOWN_PARAMETER
             )
-
-    elif select == "qrcode":
+    # but qr code can generate every one
+    elif select == "qrcode" and object_id is not None:
         # create qr by transformation photo id
         transform_photo = await PhotoService(db).get_transformed_photo_by_transformed_id(
             photo_id, object_id
@@ -352,41 +389,36 @@ async def transform_photo(
         if not transform_photo:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND,
+                detail=messages.TRANSFORMED_PHOTOS_NOT_FOUND
             )
         transform_photo_url = \
             f"{str(request.base_url)}api/photos/{photo_id}/transform/?select=qrcode&object_id={object_id}"
 
         transformed_qr_code = QRCodeService().generate_qr_code(transform_photo_url)
-        # For Swagger
+        # Show qrcode in Swagger
         return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
-
-"""
-            # Need to choose delete this route or not
-            transform_photo_url = CloudinaryService().get_transformed_photo_url(
-                public_id=photo.public_id, transformation=transformation.model_dump()
-            )
-            new_transformed_photo = await PhotoService(db).add_transformed_photo_to_db(
-                photo.id, transform_photo_url
-            )
-            return {"transformed_photo_url": new_transformed_photo.image_url}
-"""
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=messages.UNKNOWN_PARAMETER
+        )
 
 
 @router_photos.put(
     "/{photo_id}",
-    response_model=ImageResponseAfterUpdateSchema,
+    response_model=ImageResponseAfterUpdateSchema | CommentResponseShort,
     dependencies=None,
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_200_OK
 )
 async def update_photo(
-    photo_id: int,
-    description: str,
+    photo_id: Annotated[int, Path(description="Photo ID", ge=1)],
+    description: Annotated[str, Query(description="Photo description", min_length=3)],
+    select: Annotated[str, Query(description="Choose action", enum=['photo', 'comment'])] = "photo",
+    object_id: Annotated[int, Query(description="Choose object ID", ge=1)] = None,
     db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
+    current_user: UserModel = Depends(auth_service.get_current_user)
 ):
     """
-    TODO OK. Remove this string in release
     Change photo description.
 
     Only for registered users.
@@ -397,20 +429,103 @@ async def update_photo(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
         )
+    if select == "photo":
+        # Get user role
+        admin_moderator_check = await RoleChecker(
+            [Roles.admin, Roles.moderator]
+        ).check_admin_or_moderator(user_id=current_user.id, db=db)
+        # check owner and moderator|admin
+        if (photo.user_id != current_user.id) and admin_moderator_check is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
+            )
+        photo.description = description
+        edited_photo = await PhotoService(db).update_photo(photo)
+        return edited_photo
 
-    # Get user role
-    admin_moderator_check = await RoleChecker(
-        [Roles.admin, Roles.moderator]
-    ).check_admin_or_moderator(user_id=current_user.id, db=db)
-    # check owner and moderator|admin
-    if (photo.user_id != current_user.id) and admin_moderator_check is None:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
+    elif select == "comment":
+        # check if comment exists to perform operations on it
+        exists_comment = await CommentService(db).check_exist_comment(
+            photo_id=photo_id, comment_id=object_id
         )
 
-    photo.description = description
-    edited_photo = await PhotoService(db).update_photo(photo)
-    return edited_photo
+        if not exists_comment:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail=messages.COMMENT_NOT_FOUND
+            )
+
+        admin_moderator_check = await RoleChecker(
+            [Roles.admin, Roles.moderator]
+        ).check_admin_or_moderator(user_id=current_user.id, db=db)
+        if exists_comment.user_id == current_user.id and admin_moderator_check is None:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail=messages.NO_EDIT_RIGHTS
+            )
+
+        # perform operation on comment if all checks are passe successfully
+        result = await CommentService(db).edit_comment(
+            photo_id=photo_id, comment_id=object_id, comment=description
+        )
+        return result
+
+
+@router_photos.get(
+    "/{photo_id}/rating",
+    response_model=None,
+    dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
+    status_code=status.HTTP_200_OK,
+)
+async def show_rates(
+    photo_id: int = Path(ge=1),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Show all rates for current image
+
+    Only for admin and moderators.
+    To see what rate and who was set it.
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).get_rates(photo_id=photo_id)
+    return result
+
+
+@router_photos.delete(
+    "/{photo_id}/rating/{username}",
+    response_model=None,
+    dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_rate(
+    photo_id: Annotated[int, Path(description="Photo ID", ge=1)],
+    username: Annotated[str, Path(description="Username", min_length=2, max_length=50)],
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Delete rate for photo with photo_id
+    and user with username
+
+    Only for admins and moderators
+    """
+    # check if we have photo object in database to perform operations with comments
+    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
+    if not exists_photo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
+        )
+
+    result = await RatingService(db).delete_rate(photo_id=photo_id, username=username)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.RATING_NOT_SET
+        )
+    return result
 
 
 # ================================================================================================================
@@ -562,38 +677,10 @@ async def show_comments(
     return result
 
 
-@router_deprecated.post(
-    "/{photo_id}/comments",
-    response_model=comment.CommentResponseShort,
-    dependencies=None,
-    status_code=status.HTTP_201_CREATED,
-)
-async def add_comment(
-    body: comment.CommentSchema,
-    photo_id: int,
-    db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
-):
-    """
-    Add comment to current image
-    Only for registered users
-    """
-    # check if we have photo object in database to perform operations with comments
-    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
-    if not exists_photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
-        )
-    # if photo object in database - we can add comment
-    result = await CommentService(db).add_comment(
-        photo_id=photo_id, comment=body.content, user_id=current_user.id
-    )
-    return result
-
 
 @router_deprecated.put(
     "/{photo_id}/comment/{comment_id}",
-    response_model=None,
+    response_model=List[ShowAllRateSchema],
     dependencies=None,
     status_code=None,
 )
@@ -683,10 +770,6 @@ async def delete_comment(
     return result
 
 
-# ================================================================================================================
-# comments section
-# ================================================================================================================
-
 
 @router_deprecated.post(
     "/{photo_id}/rating",
@@ -727,67 +810,10 @@ async def add_rate(
     return result
 
 
-@router_deprecated.delete(
-    "/{photo_id}/rating/{username}",
-    response_model=None,
-    dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator]))],
-    status_code=status.HTTP_204_NO_CONTENT,
-)
-async def delete_rate(
-    photo_id: int = Path(ge=1), username: str = "", db: AsyncSession = Depends(get_db)
-):
-    """
-    TESTING ROUTE
-
-    Delete rate
-
-    Temporary rote for testing functionality
-    """
-
-    # check if we have photo object in database to perform operations with comments
-    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
-    if not exists_photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
-        )
-
-    result = await RatingService(db).delete_rate(photo_id=photo_id, username=username)
-    if not result:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.RATING_NOT_SET
-        )
-    return result
 
 
-@router_deprecated.get(
-    "/{photo_id}/rating",
-    response_model=None,
-    dependencies=None,
-    status_code=status.HTTP_200_OK,
-)
-async def show_rates(
-    photo_id: int = Path(ge=1),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    TESTING ROUTE
 
-    View avg rate for photo with photo_is
 
-    Temporary rote for testing functionality
-    """
-    # check if we have photo object in database to perform operations with comments
-    exists_photo = await PhotoService(db).get_photo_exists(photo_id=photo_id)
-    if not exists_photo:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.PHOTO_NOT_FOUND
-        )
-
-    result = await RatingService(db).get_avg_rate(photo_id=photo_id)
-    if not result:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Test")
-
-    return result
 
 
 # @router_photos.post("/create_image_link/")

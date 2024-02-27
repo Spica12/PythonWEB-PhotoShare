@@ -57,9 +57,7 @@ class PhotoService:
         query = await self.repo.get_photo_object_with_params(skip, limit)
         result = []
         for photo in query:
-            logging.info(f"Services: {photo._asdict()}")
             result.append(photo._asdict())
-        logging.info(f"Services: {result}")
         return result
 
     async def get_one_photo_page(self, photo_id: int, skip: int, limit: int):
@@ -69,10 +67,8 @@ class PhotoService:
             # translate result to dict
             result = result._asdict()
             comments = await CommentRepo(self.repo.db).get_all_comments(photo_id, skip, limit)
-            logging.info(f"{comments}")
             # adding comments to result dict
             result["comments"] = comments
-        logging.info(f"{result}")
         return result
 
 

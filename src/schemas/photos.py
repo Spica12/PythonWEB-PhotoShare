@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 
 class ImageUpdateSchema(BaseModel):
-    description: Optional[str] = Field(max_length=255)
+    description: Optional[str] = Field(min_length=3, max_length=255)
 
 
 class ImageSchema(ImageUpdateSchema):

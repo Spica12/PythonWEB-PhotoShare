@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
@@ -14,7 +14,7 @@ class UserRepo:
         self.db: AsyncSession = db
 
     async def get_user_by_username(self, username: str):
-        stmt = select(UserModel).filter_by(username=username)
+        stmt = select(UserModel).filter(func.lower(UserModel.username) == username.lower())
         user = await self.db.execute(stmt)
         user = user.scalar_one_or_none()
         return user
