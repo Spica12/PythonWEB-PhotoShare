@@ -53,8 +53,7 @@ class PhotoService:
         return transformed_photo
 
     async def delete_transformed_photo(self, photo_id: int, transform_id: int):
-        result = await self.repo.delete_transformed_photo(photo_id, transform_id)
-        return result
+        await self.repo.delete_transformed_photo(photo_id, transform_id)
 
     async def get_all_photo_per_page(self, skip: int, limit: int):
         query = await self.repo.get_photo_object_with_params(skip, limit)

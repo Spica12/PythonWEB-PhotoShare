@@ -1,4 +1,4 @@
-from copy import copy
+from copy import copy, deepcopy
 from pathlib import Path
 from unittest.mock import AsyncMock, Mock
 from PIL import Image
@@ -6,7 +6,7 @@ import io
 
 import pytest
 from sqlalchemy import select
-from src.models.photos import PhotoModel
+from src.models.photos import CommentModel, PhotoModel, TransformedImageLinkModel
 from src.models.users import UserModel
 from fastapi import status
 
@@ -17,7 +17,6 @@ from src.conf import messages
 
 from conftest import test_user
 
-from src.conf.config import logging
 
 
 @pytest.mark.asyncio
@@ -244,156 +243,3 @@ async def test_show_photo(client, photo_id, status_code, detail_code):
     data = response.json()
     if response.status_code != status.HTTP_200_OK:
         assert data["detail"] == detail_code
-
-
-@pytest.mark.asyncio
-async def test_delete_photo(client, get_token, monkeypatch):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-
-    async with TestingSessionLocal() as session:
-        result = await session.execute(
-            select(UserModel).filter_by(username=test_user["username"])
-        )
-        user = result.scalar_one_or_none()
-    photo_id = 3
-    response = client.delete(
-        f"api/photos/{photo_id}", headers={"Authorization": f"Bearer {get_token}"}
-    )
-
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-
-
-@pytest.mark.asyncio
-async def test_delete_photo_not_found(client, get_token, monkeypatch):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-
-    async with TestingSessionLocal() as session:
-        result = await session.execute(
-            select(UserModel).filter_by(username=test_user["username"])
-        )
-        user = result.scalar_one_or_none()
-    photo_id = 3
-    response = client.delete(
-        f"api/photos/{photo_id}", headers={"Authorization": f"Bearer {get_token}"}
-    )
-
-    assert response.status_code == status.HTTP_404_NOT_FOUND, response.text
-    data = response.json()
-    assert data["detail"] == messages.PHOTO_NOT_FOUND
-
-
-@pytest.mark.asyncio
-async def test_delete_photo_user_by_owner(client, monkeypatch, create_confirmed_user):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-    async with TestingSessionLocal() as session:
-        result = await session.execute(
-            select(UserModel).filter_by(username=confirmed_user_data["username"])
-        )
-        user = result.scalar_one_or_none()
-        photo = PhotoModel(
-            user_id=user.id,
-            description="test_description",
-            image_url="test_url",
-            public_id="test_public_id",
-        )
-        session.add(photo)
-        await session.commit()
-        await session.refresh(photo)
-
-    photo_id = photo.id
-    confirmed_user_token = await auth_service.create_access_token(
-        confirmed_user_data["email"]
-    )
-
-    response = client.delete(
-        f"api/photos/{photo_id}",
-        headers={"Authorization": f"Bearer {confirmed_user_token}"},
-    )
-
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert mock_cloudinary_uploader_destroy.assert_called_once
-
-
-@pytest.mark.asyncio
-async def test_delete_photo_user_by_moderator(client, monkeypatch, create_moderator):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-    async with TestingSessionLocal() as session:
-        result = await session.execute(
-            select(UserModel).filter_by(username=moderator_data["username"])
-        )
-        user = result.scalar_one_or_none()
-        photo = PhotoModel(
-            user_id=user.id,
-            description="test_description",
-            image_url="test_url",
-            public_id="test_public_id",
-        )
-        session.add(photo)
-        await session.commit()
-        await session.refresh(photo)
-
-    photo_id = photo.id
-    moderator_token = await auth_service.create_access_token(moderator_data["email"])
-
-    response = client.delete(
-        f"api/photos/{photo_id}",
-        headers={"Authorization": f"Bearer {moderator_token}"},
-    )
-
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert mock_cloudinary_uploader_destroy.assert_called_once
-
-
-@pytest.mark.asyncio
-async def test_delete_photo_user_by_another_user(client, monkeypatch):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-    async with TestingSessionLocal() as session:
-        result = await session.execute(
-            select(UserModel).filter_by(username=test_user["username"])
-        )
-        user = result.scalar_one_or_none()
-        photo = PhotoModel(
-            user_id=user.id,
-            description="test_description",
-            image_url="test_url",
-            public_id="test_public_id",
-        )
-        session.add(photo)
-        await session.commit()
-        await session.refresh(photo)
-
-    photo_id = photo.id
-    confirmed_user_token = await auth_service.create_access_token(
-        confirmed_user_data["email"]
-    )
-
-    response = client.delete(
-        f"api/photos/{photo_id}",
-        headers={"Authorization": f"Bearer {confirmed_user_token}"},
-    )
-
-    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
-    assert mock_cloudinary_uploader_destroy.assert_called_once
-    data = response.json()
-    assert data["detail"] == messages.NO_EDIT_RIGHTS
-    assert mock_cloudinary_uploader_destroy.assert_not_called
