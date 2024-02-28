@@ -13,7 +13,8 @@ from tests.conftest import (
     moderator_data,
     create_test_photo,
     create_transform_test_photo,
-    get_user_id_by_username
+    get_user_id_by_username,
+    create_user_test,
 )
 from src.services.auth import auth_service
 from src.conf import messages
@@ -103,11 +104,16 @@ async def test_delete_photo_user_by_owner(client, monkeypatch, create_confirmed_
 
 
 @pytest.mark.asyncio
-async def test_delete_photo_user_by_moderator(client, monkeypatch, create_moderator):
+async def test_delete_photo_user_by_moderator(client, monkeypatch):
     mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
     monkeypatch.setattr(
         "src.services.cloudinary.CloudinaryService.destroy_photo",
         mock_cloudinary_uploader_destroy,
+    )
+    moderator = await create_user_test(
+        "mod_test",
+        "mod_test@test.com",
+        "mod_test",
     )
     photo = await create_test_photo(confirmed_user_data["username"])
     user = await get_user_id_by_username(confirmed_user_data["username"])
@@ -115,7 +121,7 @@ async def test_delete_photo_user_by_moderator(client, monkeypatch, create_modera
     assert photo is not None
 
     photo_id = photo.id
-    moderator_token = await auth_service.create_access_token(moderator_data["email"])
+    moderator_token = await auth_service.create_access_token(moderator.email)
 
     response = client.delete(
         f"api/photos/{photo_id}",
