@@ -6,13 +6,15 @@ import asyncio
 import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from main import app
+from src.models.photos import PhotoModel, TransformedImageLinkModel, CommentModel, TagModel
 from src.dependencies.database import get_db
 from src.models.base import Base
-from src.models.users import UserModel
+from src.models.users import Roles, UserModel
 from src.services.auth import auth_service
 
 # ------------------------------------------------------------------------------------
@@ -102,7 +104,7 @@ async def get_token():
 
 
 blocked_user = {
-    "username": "blocked_user@example.com",
+    "username": "blocked_user",
     "email": "blocked_user@example.com",
     "password": "test_testpassword",
     "confirmed": True,
@@ -111,7 +113,7 @@ blocked_user = {
 }
 
 unconfirmed_user_data = {
-    "username": "unconfirmed_user@example.com",
+    "username": "unconfirmed_user",
     "email": "unconfirmed_user@example.com",
     "password": "test_testpassword",
     "confirmed": False,
@@ -120,7 +122,7 @@ unconfirmed_user_data = {
 }
 
 confirmed_user_data = {
-    "username": "confirmed_user@example.com",
+    "username": "confirmed_user",
     "email": "confirmed_user@example.com",
     "password": "test_testpassword",
     "confirmed": True,
@@ -129,7 +131,7 @@ confirmed_user_data = {
 }
 
 moderator_data = {
-    "username": "moderator_user@example.com",
+    "username": "moderator_user",
     "email": "moderator_user@example.com",
     "password": "test_testpassword",
     "confirmed": True,
@@ -193,9 +195,92 @@ def create_moderator():
     async def _create_moderator():
         async with TestingSessionLocal() as session:
             hash_password = auth_service.get_password_hash(moderator_data["password"])
+            moderator_data = moderator_data.copy()
             moderator_data["password"] = hash_password
             current_user = UserModel(**moderator_data)
             session.add(current_user)
             await session.commit()
 
     asyncio.run(_create_moderator())
+
+
+async def create_test_photo(username: str):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(UserModel).filter_by(username=username))
+        current_user = result.scalar_one_or_none()
+        photo = PhotoModel(
+            user_id=current_user.id,
+            description="test_description",
+            image_url="test_url",
+            public_id="test_public_id",
+        )
+        session.add(photo)
+        await session.commit()
+        await session.refresh(photo)
+    return photo
+
+
+async def create_transform_test_photo(photo_id: int):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(PhotoModel).filter_by(id=photo_id))
+        exist_photo = result.scalars().first()
+        transform_photo = TransformedImageLinkModel(
+            photo_id=exist_photo.id,
+            image_url="test_url",
+        )
+        session.add(transform_photo)
+        await session.commit()
+        await session.refresh(transform_photo)
+    return transform_photo
+
+
+async def create_test_comment(photo_id: int, username: str):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(PhotoModel).filter_by(id=photo_id))
+        exist_photo = result.scalars().first()
+
+        result = await session.execute(select(UserModel).filter_by(username=username))
+        user = result.scalar_one_or_none()
+
+        comment = CommentModel(
+            content = "test_content",
+            photo_id=exist_photo.id,
+            user_id= user.id
+        )
+        session.add(comment)
+        await session.commit()
+        await session.refresh(comment)
+    return comment
+
+
+async def get_user_id_by_username(username: str):
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(UserModel).filter_by(username=username))
+        user = result.scalar_one_or_none()
+        return user.id
+
+
+async def create_user_test(
+        username: str,
+        email: str,
+        password: str,
+        is_active: bool = True,
+        confirmed: bool = True,
+        role: Roles = Roles.users
+):
+    async with TestingSessionLocal() as session:
+        hash_password = auth_service.get_password_hash(password)
+        copy_confirmed_user_data = confirmed_user_data.copy()
+
+        current_user = UserModel(
+            username=username,
+            email=email,
+            password=hash_password,
+            confirmed=confirmed,
+            is_active=is_active,
+            role=role
+        )
+        session.add(current_user)
+        await session.commit()
+        await session.refresh(current_user)
+        return current_user
