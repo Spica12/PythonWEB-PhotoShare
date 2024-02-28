@@ -78,7 +78,6 @@ class PhotoRepo:
         if result:
             await self.db.delete(result)
             await self.db.commit()
-        return result
 
     async def get_transformed_photo_by_transformed_id(self, photo_id: int, transform_id: int):
         stmt = select(TransformedImageLinkModel).filter_by(

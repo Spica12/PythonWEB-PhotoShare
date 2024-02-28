@@ -53,7 +53,7 @@ async def test_register_existing_user_by_email(client):
     # Then
     assert response.status_code == status.HTTP_409_CONFLICT, response.text# Conflict due to existing user
     response_data = response.json()
-    assert response_data["detail"] == messages.ACCOUNT_EXIST
+    assert response_data["detail"] == messages.EMAIL_IS_ALREADY_BUSY
 
 @pytest.mark.asyncio
 async def test_register_user_by_username(client):
@@ -74,7 +74,7 @@ async def test_register_user_by_username(client):
 
     # Отримання даних з відповіді
     response_data = response.json()
-    assert response_data["detail"] == messages.ACCOUNT_EXIST
+    assert response_data["detail"] == messages.USERNAME_IS_ALREADY_BUSY
 
 
 # @pytest.mark.asyncio

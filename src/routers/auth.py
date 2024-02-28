@@ -46,12 +46,14 @@ async def register(
     exist_user_by_email = await auth_service.get_user_by_email(body.email, db=db)
     if exist_user_by_email:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST
+            status_code=status.HTTP_409_CONFLICT,
+            detail=messages.EMAIL_IS_ALREADY_BUSY,
         )
     exist_user_by_username = await auth_service.get_user_by_username(body.username, db=db)
     if exist_user_by_username:
         raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT, detail=messages.ACCOUNT_EXIST
+            status_code=status.HTTP_409_CONFLICT,
+            detail=messages.USERNAME_IS_ALREADY_BUSY,
         )
 
     body.password = auth_service.get_password_hash(body.password)
@@ -194,7 +196,7 @@ async def request_password_reset(
     exist_user = await auth_service.get_user_by_email(body.email, db)
     if exist_user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
     if not exist_user.confirmed:
         raise HTTPException(
