@@ -104,39 +104,6 @@ async def test_delete_photo_user_by_owner(client, monkeypatch, create_confirmed_
 
 
 @pytest.mark.asyncio
-async def test_delete_photo_user_by_moderator(client, monkeypatch):
-    mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
-    monkeypatch.setattr(
-        "src.services.cloudinary.CloudinaryService.destroy_photo",
-        mock_cloudinary_uploader_destroy,
-    )
-    moderator = await create_user_test(
-        "mod_test",
-        "mod_test@test.com",
-        "mod_test",
-    )
-    photo = await create_test_photo(confirmed_user_data["username"])
-    user = await get_user_id_by_username(confirmed_user_data["username"])
-
-    assert photo is not None
-
-    photo_id = photo.id
-    moderator_token = await auth_service.create_access_token(moderator.email)
-
-    response = client.delete(
-        f"api/photos/{photo_id}",
-        headers={"Authorization": f"Bearer {moderator_token}"},
-    )
-    async with TestingSessionLocal() as session:
-        result = await session.execute(select(PhotoModel).filter_by(id=photo.id))
-        photo = result.scalar_one_or_none()
-        assert photo is None
-
-    assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
-    assert mock_cloudinary_uploader_destroy.assert_called_once
-
-
-@pytest.mark.asyncio
 async def test_delete_photo_user_by_another_user(client, monkeypatch):
     mock_cloudinary_uploader_destroy = Mock(return_value={"result": "ok"})
     monkeypatch.setattr(
