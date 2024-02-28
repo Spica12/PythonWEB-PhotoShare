@@ -58,72 +58,83 @@ async def test_delete_photo_comment_not_found(client, get_token):
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
-# @pytest.mark.asyncio
-# async def test_delete_photo_comment_by_owner(client, get_token):
-#     """
-#     Owner can not delete comments
-#     """
-#     confirmed_user = await create_user_test(
-#         username = confirmed_user_data["username"],
-#         email = confirmed_user_data["email"],
-#         password = confirmed_user_data["password"],
-#         is_active = confirmed_user_data["is_active"],
-#         confirmed = confirmed_user_data["confirmed"],
-#         role = Roles.users
-#     )
-#     photo = await create_test_photo(confirmed_user_data["username"])
-#     comment = await create_test_comment(photo.id, test_user["username"])
-#     assert comment is not None
+@pytest.mark.asyncio
+async def test_delete_photo_comment_by_owner(client, get_token):
+    """
+    Owner can not delete comments
+    """
+    user = {
+        "username": "test_tesdfgt_user",
+        "email": "test_usedfgdfgr_user@example.com",
+        "password": "password",
+        "is_active": True,
+        "confirmed": True,
+        "role": Roles.users,
+    }
 
-#     confirmed_user_token = await auth_service.create_access_token(
-#         confirmed_user.email
-#     )
+    user = await create_user_test(**user)
+    photo = await create_test_photo(user.username)
+    comment = await create_test_comment(photo.id, user.username)
+    assert comment is not None
 
-#     response = client.delete(
-#         f"api/photos/{photo.id}",
-#         headers={"Authorization": f"Bearer {confirmed_user_token}"},
-#         params={"select": "comment", "object_id": comment.id},
-#     )
+    user_token = await auth_service.create_access_token(user.email)
 
-#     async with TestingSessionLocal() as session:
-#         result = await session.execute(select(CommentModel).filter_by(id=comment.id))
-#         comment = result.scalar_one_or_none()
-#         assert comment is None
+    response = client.delete(
+        f"api/photos/{photo.id}",
+        headers={"Authorization": f"Bearer {user_token}"},
+        params={"select": "comment", "object_id": comment.id},
+    )
 
-#     assert response.status_code == status.HTTP_403_FORBIDDEN
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(CommentModel).filter_by(id=comment.id))
+        comment = result.scalar_one_or_none()
+        assert comment is not None
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
-# @pytest.mark.asyncio
-# async def test_delete_photo_comment_by_moderator(client):
-#     """
-#     Owner can not delete comments
-#     """
-#     moderator = await create_user_test(
-#         username=moderator_data["username"],
-#         email=moderator_data["email"],
-#         password=moderator_data["password"],
-#         is_active=moderator_data["is_active"],
-#         confirmed=moderator_data["confirmed"],
-#         role=Roles.moderator,
-#     )
-#     photo = await create_test_photo(confirmed_user_data["username"])
-#     comment = await create_test_comment(photo.id, test_user["username"])
-#     assert comment is not None
+@pytest.mark.asyncio
+async def test_delete_photo_comment_by_moderator(client):
+    """
+    Moderator can delete comments
+    """
+    moderator = {
+        "username": 'test_moderator22',
+        "email": 'test_moderator22@example.com',
+        "password": 'password',
+        "is_active": True,
+        "confirmed": True,
+        "role": Roles.moderator,
+    }
+    user = {
+        "username": 'test_test_user',
+        "email": 'test_user_user@example.com',
+        "password": 'password',
+        "is_active": True,
+        "confirmed": True,
+        "role": Roles.users,
+    }
 
-#     moderator_token = await auth_service.create_access_token(moderator.email)
+    user = await create_user_test(**user)
+    moderator = await create_user_test(**moderator)
+    photo = await create_test_photo(user.username)
+    comment = await create_test_comment(photo.id, user.username)
+    assert comment is not None
 
-#     response = client.delete(
-#         f"api/photos/{photo.id}",
-#         headers={"Authorization": f"Bearer {moderator_token}"},
-#         params={"select": "comment", "object_id": comment.id},
-#     )
+    moderator_token = await auth_service.create_access_token(moderator.email)
 
-#     async with TestingSessionLocal() as session:
-#         result = await session.execute(select(CommentModel).filter_by(id=comment.id))
-#         comment = result.scalar_one_or_none()
-#         assert comment is None
+    response = client.delete(
+        f"api/photos/{photo.id}",
+        headers={"Authorization": f"Bearer {moderator_token}"},
+        params={"select": "comment", "object_id": comment.id},
+    )
 
-#     assert response.status_code == status.HTTP_204_NO_CONTENT
+    async with TestingSessionLocal() as session:
+        result = await session.execute(select(CommentModel).filter_by(id=comment.id))
+        comment = result.scalar_one_or_none()
+        assert comment is None
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
 
 
 @pytest.mark.asyncio
