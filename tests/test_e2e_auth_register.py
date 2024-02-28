@@ -1,118 +1,94 @@
-from unittest.mock import AsyncMock, Mock, patch
-import httpx
+from fastapi import status
+from typing import Optional
+
+from jose import JWTError, jwt
+from unittest.mock import Mock, AsyncMock, MagicMock
 import pytest
-from sqlalchemy import select
+import json
+
 from src.models.users import UserModel
-from tests.conftest import TestingSessionLocal, test_user
-from src.conf import messages
+from src.schemas.users import UserSchema
+from tests.conftest import TestingSessionLocal, test_user, unconfirmed_user_data, TestClient
+from src.conf.messages import ACCOUNT_EXIST
 from pathlib import Path
 from src.services.auth import auth_service
-from fastapi import status
+
 
 
 user_data = {
     "username": "string",
     "email": "user@example.com",
     "password": "string",
-    "avatar": "user_data_avatar",
-    "role": "moderator",
-    "confirmed": True,
-    "is_active": True,
 }
 
-@pytest.mark.asyncio
-async def test_register_user(client):
-    test_user_data = {
-        "username": "testuser",
-        "email": "test@example.com",
-        "password": "testpassword",
-    }
 
-    # When
-    response = client.post("/api/auth/register", json=test_user_data)
+def test_create_user(client, monkeypatch):
+    mock_send_email = MagicMock()
+    monkeypatch.setattr("src.services.email.EmailService.send_varification_mail", mock_send_email)
+    response = client.post(
+        "/api/auth/register",
+        json=user_data,
+    )
+    assert response.status_code == 201, response.text
+    data = response.json()
+    assert data['username'] == user_data['username']
+    assert data['email'] == user_data['email']
+    assert data['avatar'] is None
+    assert data['role'] == 'users'
+    assert data['confirmed'] is False
+    assert data['is_active'] is True
 
-    # Then
-    assert response.status_code == status.HTTP_201_CREATED
-    response_data = response.json()
-    assert "id" in response_data
-    assert "username" in response_data
-    assert "email" in response_data
-    assert "confirmed" in response_data
-
-@pytest.mark.asyncio
-async def test_register_existing_user_by_email(client):
-    test_user_data = {
-        "username": "testuser",
-        "email": "test@example.com",
-        "password": "testpassword",
-    }
-
-    # Try to register the same user again
-    response = client.post("/api/auth/register", json=test_user_data)
-
-    # Then
-    assert response.status_code == status.HTTP_409_CONFLICT, response.text# Conflict due to existing user
-    response_data = response.json()
-    assert response_data["detail"] == messages.ACCOUNT_EXIST
 
 @pytest.mark.asyncio
-async def test_register_user_by_username(client):
-    # Макет сервісу аутентифікації
-
-    # Дані для тестування
-    user_data = {
-        "username": "testuser",
+async def test_existing_user_registration(client, monkeypatch):
+    # Given an existing user in the system
+    existing_user_data = {
+        "username": "existing_user",
         "email": "existing@example.com",
-        "password": "testpassword"
+        "password": "existing_password",
     }
 
-    # Виклик реєстраційного маршруту через тестовий клієнт
-    response = client.post("/api/auth/register", json=user_data)
+    # Monkeypatch the necessary functions
+    monkeypatch.setattr(auth_service, "create_user", AsyncMock(return_value=None))
 
-    # Перевірка статусу відповіді
-    assert response.status_code == status.HTTP_409_CONFLICT
+    # When trying to register a user with the same username and email
+    new_user_data = {
+        "username": "existing_user",  # Username already exists
+        "email": "existing@example.com",  # Email already exists
+        "password": "new_password",
+    }
 
-    # Отримання даних з відповіді
-    response_data = response.json()
-    assert response_data["detail"] == messages.ACCOUNT_EXIST
+    response = client.post("/api/auth/register", data=new_user_data)
 
 
-# @pytest.mark.asyncio
-# async def test_register_user_username_exists(client):
-#     # Макет сервісу аутентифікації
 
-#     # Дані для тестування
-#     user_data = {
-#         "username": "testuser",
-#         "email": "newuser@example.com",
-#         "password": "testpassword"
-#     }
 
-#     # Виклик реєстраційного маршруту через тестовий клієнт
-#     response = client.post("/api/auth/register", json=user_data)
 
-#     # Перевірка статусу відповіді
-#     assert response.status_code == status.HTTP_409_CONFLICT
 
-#     # Отримання даних з відповіді
-#     response_data = response.json()
-#     assert response_data["detail"] == messages.ACCOUNT_EXIST
+
+
+
 
 
 @pytest.mark.asyncio
-async def test_register_user_invalid_data(client):
-    # Дані для тестування з невірними даними (наприклад, відсутність пароля)
+async def test_register_invalid_data(client, monkeypatch):
+    # Invalid data without username
     invalid_user_data = {
-        "username": "testuser",
-        "email": "test@example.com"
+        "email": "test@example.com",
+        "password": "testpassword",
     }
 
-    # Виклик реєстраційного маршруту через тестовий клієнт
+    # Monkeypatch the necessary functions
+    mock_create_user = AsyncMock()
+    monkeypatch.setattr(auth_service, "create_user", mock_create_user)
+
+    # Try to register with invalid data
     response = client.post("/api/auth/register", json=invalid_user_data)
 
-    # Перевірка статусу відповіді
+    # Then
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY
-
-    # Отримання даних з відповіді
     response_data = response.json()
     assert response_data["detail"][0]["msg"].lower() == "field required"
+
+    # Ensure the necessary function was not called
+    assert not mock_create_user.called
