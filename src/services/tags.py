@@ -17,7 +17,7 @@ class TagService:
         # split the string with a comma and replace the spaces with "_"
         list_tags = []
         for tag in body_tags.split(","):
-            tag = tag.replace(' ', '_').lower().strip()
+            tag = tag.strip().lower().replace(' ', '_')
             if len(tag) > 0:
                 list_tags.append(tag)
 
