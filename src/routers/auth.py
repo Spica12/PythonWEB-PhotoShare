@@ -196,7 +196,7 @@ async def request_password_reset(
     exist_user = await auth_service.get_user_by_email(body.email, db)
     if exist_user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail=messages.USER_NOT_FOUND
+            status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
     if not exist_user.confirmed:
         raise HTTPException(
