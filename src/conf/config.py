@@ -34,6 +34,10 @@ class Settings(BaseSettings):
 
     BASE_DIR: Path = Path(__file__).parent.parent.parent
 
+    # Max size of file in bytes (10MB)
+    MAX_FILE_SIZE_BYTES: int = 10 * 1024 * 1024
+    TYPES_IMAGES: list = ["image/png", "image/jpeg", "image/jpg"],
+
     model_config = ConfigDict(
         extra="ignore", env_file=".env", env_file_encoding="utf-8"
     )

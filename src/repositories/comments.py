@@ -57,7 +57,6 @@ class CommentRepo:
         if result:
             await self.db.delete(result)
             await self.db.commit()
-        return result
 
     async def edit_comment(self, photo_id: int, comment_id: int, comment: str):
         stmt = select(CommentModel).filter(

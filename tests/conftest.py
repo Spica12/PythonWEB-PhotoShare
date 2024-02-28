@@ -52,9 +52,9 @@ test_user = {
     "email": "conf_user@example.com",
     "password": "conf_testpassword",
     "avatar": "conf_testavatar",
-    'role': 'admin',
-    'confirmed': True,
-    'is_active': True
+    "role": "admin",
+    "confirmed": True,
+    "is_active": True,
 }
 
 
@@ -94,6 +94,7 @@ def client():
     client = TestClient(app)
     yield client
 
+
 @pytest_asyncio.fixture()
 async def get_token():
     token = await auth_service.create_access_token(test_user["email"])
@@ -101,13 +102,13 @@ async def get_token():
 
 
 blocked_user = {
-        "username": "blocked_user@example.com",
-        "email": "blocked_user@example.com",
-        "password": "test_testpassword",
-        "confirmed": True,
-        "is_active": False,
-        "role": "users",
-    }
+    "username": "blocked_user@example.com",
+    "email": "blocked_user@example.com",
+    "password": "test_testpassword",
+    "confirmed": True,
+    "is_active": False,
+    "role": "users",
+}
 
 unconfirmed_user_data = {
     "username": "unconfirmed_user@example.com",
@@ -125,6 +126,15 @@ confirmed_user_data = {
     "confirmed": True,
     "is_active": True,
     "role": "users",
+}
+
+moderator_data = {
+    "username": "moderator_user@example.com",
+    "email": "moderator_user@example.com",
+    "password": "test_testpassword",
+    "confirmed": True,
+    "is_active": True,
+    "role": "moderator",
 }
 
 
@@ -147,7 +157,9 @@ def create_blocked_user():
 def create_unconfirmed_user():
     async def _create_unconfirmed_user():
         async with TestingSessionLocal() as session:
-            hash_password = auth_service.get_password_hash(unconfirmed_user_data["password"])
+            hash_password = auth_service.get_password_hash(
+                unconfirmed_user_data["password"]
+            )
             copy_unconfirmed_user_data = unconfirmed_user_data.copy()
             copy_unconfirmed_user_data["password"] = hash_password
 
@@ -159,10 +171,12 @@ def create_unconfirmed_user():
 
 
 @pytest.fixture()
-def create_confirmed_user(name="confirmed_user"):
+def create_confirmed_user():
     async def _create_confirmed_user():
         async with TestingSessionLocal() as session:
-            hash_password = auth_service.get_password_hash(confirmed_user_data["password"])
+            hash_password = auth_service.get_password_hash(
+                confirmed_user_data["password"]
+            )
             copy_confirmed_user_data = confirmed_user_data.copy()
             copy_confirmed_user_data["password"] = hash_password
 
@@ -171,3 +185,17 @@ def create_confirmed_user(name="confirmed_user"):
             await session.commit()
 
     asyncio.run(_create_confirmed_user())
+
+
+@pytest.fixture()
+def create_moderator():
+
+    async def _create_moderator():
+        async with TestingSessionLocal() as session:
+            hash_password = auth_service.get_password_hash(moderator_data["password"])
+            moderator_data["password"] = hash_password
+            current_user = UserModel(**moderator_data)
+            session.add(current_user)
+            await session.commit()
+
+    asyncio.run(_create_moderator())

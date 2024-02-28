@@ -1,12 +1,15 @@
+from io import BytesIO
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
-import logging
+from PIL import Image
 
+from src.conf.config import config
+from src.conf import messages
 from src.models.photos import PhotoModel
 from src.models.users import UserModel
 from src.repositories.photos import PhotoRepo
 from src.repositories.comments import CommentRepo
-
 
 
 class PhotoService:
@@ -50,8 +53,7 @@ class PhotoService:
         return transformed_photo
 
     async def delete_transformed_photo(self, photo_id: int, transform_id: int):
-        result = await self.repo.delete_transformed_photo(photo_id, transform_id)
-        return result
+        await self.repo.delete_transformed_photo(photo_id, transform_id)
 
     async def get_all_photo_per_page(self, skip: int, limit: int):
         query = await self.repo.get_photo_object_with_params(skip, limit)
@@ -71,4 +73,22 @@ class PhotoService:
             result["comments"] = comments
         return result
 
-
+    async def validate_photo(self, file: UploadFile):
+        if not file.content_type.startswith("image/"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=messages.INVALID_FILE_NOT_IMAGE,
+        )
+        contents = await file.read()
+        if len(contents) > config.MAX_FILE_SIZE_BYTES:
+            print(len(contents))
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=messages.TOO_BIG_FILE,
+            )
+        await file.seek(0)
+        try:
+            img = Image.open(BytesIO(contents))
+            img.verify()
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=messages.INVALID_FILE_NOT_IMAGE)

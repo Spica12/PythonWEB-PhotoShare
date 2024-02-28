@@ -56,11 +56,27 @@ async def test_existing_user_registration(client, monkeypatch):
         "username": "existing_user",  # Username already exists
         "email": "existing@example.com",  # Email already exists
         "password": "new_password",
+
+    assert response.status_code == status.HTTP_409_CONFLICT, response.text# Conflict due to existing user
+    response_data = response.json()
+    assert response_data["detail"] == messages.EMAIL_IS_ALREADY_BUSY
+
+@pytest.mark.asyncio
+async def test_register_user_by_username(client):
+    # Макет сервісу аутентифікації
+
+    # Дані для тестування
+    user_data = {
+        "username": "testuser",
+        "email": "existing@example.com",
+        "password": "testpassword"
     }
 
     response = client.post("/api/auth/register", data=new_user_data)
 
-
+    # Отримання даних з відповіді
+    response_data = response.json()
+    assert response_data["detail"] == messages.USERNAME_IS_ALREADY_BUSY
 
 
 
