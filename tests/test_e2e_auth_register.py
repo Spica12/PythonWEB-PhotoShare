@@ -1,7 +1,7 @@
 from fastapi import status
 from typing import Optional
 
-from jose import JWTError, jwt
+
 from unittest.mock import Mock, AsyncMock, MagicMock
 import pytest
 import json
