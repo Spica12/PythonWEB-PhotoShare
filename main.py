@@ -1,10 +1,13 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.routers import auth, users, photos
 
 from src.dependencies.database import get_db
+from src.conf.config import config
 
 app = FastAPI()
 
@@ -26,11 +29,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+templates = Jinja2Templates(directory=config.BASE_DIR / "src" / "templates")
 
-@app.get("/")
-def index():
-    return {"message": "Main page: Python WEB group #1 project"}
-    
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse(
+        "index.html",
+        context={"request": request}
+    )
+    # return {"message": "Main page: Python WEB group #1 project"}
+
 
 @app.get("/api/healthchecker")
 async def healthchecker(db: AsyncSession = Depends(get_db)):
