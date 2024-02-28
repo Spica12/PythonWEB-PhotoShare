@@ -139,9 +139,9 @@ Users have three roles: admin, moderator, and user.
 
 ## Installation
 
-Before installing pygame, you must check that Python is installed on your machine. To find out, open a command prompt (if you have Windows) or a terminal (if you have MacOS or Linux) and type this:
+Before installing application, you must check that Python is installed on your machine. To find out, open a command prompt (if you have Windows) or a terminal (if you have MacOS or Linux) and type this:
 ```Shell
-  pip --version
+  python --version
 ```
 If a message such as "Python 3.12.2" appears, it means that Python is correctly installed. If an error message appears, it means that it is not installed yet. You must then go to the official [website](https://www.python.org/) and follow the instructions.
 
