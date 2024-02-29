@@ -136,6 +136,11 @@ async def upload_photo(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST, detail=messages.TOO_MANY_TAGS
             )
+        for tag in body.tags:
+            if len(tag) > 20:
+                raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail=messages.MAX_LEN_TAG
+            )
     else:
         body.tags = []
 
