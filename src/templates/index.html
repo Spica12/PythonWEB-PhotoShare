@@ -1,11 +1,51 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Python WEB group №1 project</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin-top: 450px;
+            background-image: url('https://png.pngtree.com/thumb_back/fh260/background/20200714/pngtree-modern-double-color-futuristic-neon-background-image_351866.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            color: #FFFFFF; /* колір тексту */
+        }
+        h1 {
+            font-size: 3.0em;
+            color: transparent; /* колір заголовку прозорий */
+            background-image: linear-gradient(45deg, #FFC700, #FFD700, #FFEA00, #FFF100); /* переливающийся фон тексту */
+            background-size: 400%;
+            animation: rainbow-text 8s linear infinite; /* анімація тексту */
+            -webkit-background-clip: text;
+            background-clip: text;
+        }
+        @keyframes rainbow-text {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 100% 0;
+            }
+        }
+        p {
+            font-size: 1.5em;
+            color: #FFFFFF; /* колір тексту */
+        }
+        a {
+            color: #007bff; /* колір посилання */
+            text-decoration: underline; /* підкреслений текст */
+        }
+    </style>
 </head>
 <body>
-    <p>This is Main page</p>
-    <a href="https://photoshare-pythonweb.koyeb.app/docs">Swagger documantation</a>
+    <h1>Welcome to Python WEB group №1 project!</h1>
+    <p>This is a FastAPI application which allows customers to upload, organize, and transform photos, and have interaction with others thru feedback and ratings photos</p>
+    <p>Check out the <a href="https://photoshare-pythonweb.koyeb.app/docs#/">Swagger documentation</a> for more information</p>
 </body>
 </html>
