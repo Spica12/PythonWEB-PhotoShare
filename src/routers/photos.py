@@ -442,7 +442,7 @@ async def transform_photo(
 
         transformed_qr_code = QRCodeService().generate_qr_code(transform_photo_url)
         # Show qrcode in Swagger
-        return StreamingResponse(transformed_qr_code, media_type="image/jpeg")
+        return StreamingResponse(transformed_qr_code, media_type="image/jpeg", status_code=status.HTTP_201_CREATED)
     else:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

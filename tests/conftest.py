@@ -284,3 +284,16 @@ async def create_user_test(
         await session.commit()
         await session.refresh(current_user)
         return current_user
+
+
+async def create_transform_photo(photo_id: int):
+    async with TestingSessionLocal() as session:
+        transform_photo = TransformedImageLinkModel(
+            photo_id=photo_id,
+            image_url="http://localhost:8000",
+        )
+        session.add(transform_photo)
+        await session.commit()
+        await session.refresh(transform_photo)
+
+    return transform_photo
