@@ -16,9 +16,6 @@ app.include_router(users.router_users, prefix="/api")
 app.include_router(photos.router_photos, prefix="/api")
 
 
-# # TODO remove in release
-# app.include_router(photos.router_deprecated, prefix="/api")
-
 origins = ["*"]
 
 app.add_middleware(

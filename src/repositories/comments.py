@@ -1,8 +1,7 @@
-import logging
-
-from sqlalchemy import select, and_
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.photos import CommentModel
 from src.models.users import UserModel
@@ -26,8 +25,7 @@ class CommentRepo:
                    CommentModel.content,
                    CommentModel.updated_at,
                    UserModel.username)
-            # .select_from(UserModel)
-            .join(CommentModel)#, isouter=True)
+            .join(CommentModel)
             .filter_by(photo_id=photo_id)
             .group_by(CommentModel.id,
                       UserModel.username,

@@ -1,7 +1,5 @@
-from typing import List
-from sqlalchemy import select, and_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from copy import deepcopy
 
 from src.models.photos import PhotoModel, TagModel
 

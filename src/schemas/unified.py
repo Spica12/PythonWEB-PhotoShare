@@ -1,8 +1,8 @@
 from typing import List, Optional
 
+from src.schemas.comment import CommentResponseIntegratedSchema
 # schemas
 from src.schemas.photos import ImageResponseTagsSchema
-from src.schemas.comment import CommentResponseIntegratedSchema
 from src.schemas.rating import RateExtendedSchema
 
 

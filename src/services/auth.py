@@ -1,18 +1,19 @@
+import secrets
 from copy import copy
 from datetime import datetime, timedelta
-import secrets
 from typing import Optional
+from uuid import UUID
+
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import UUID
 
-from src.models.users import Roles, UserModel
-from src.conf.config import config
 from src.conf import messages
+from src.conf.config import config
 from src.dependencies.database import get_db
+from src.models.users import UserModel
 from src.repositories.users import UserRepo
 from src.schemas.users import UserSchema, UserUpdateByAdminSchema
 

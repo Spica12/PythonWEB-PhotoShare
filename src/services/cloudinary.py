@@ -1,4 +1,3 @@
-import json
 from uuid import UUID
 
 import cloudinary
@@ -8,7 +7,6 @@ from fastapi import UploadFile
 
 from src.conf.config import config
 from src.models.users import UserModel
-from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class CloudinaryService:

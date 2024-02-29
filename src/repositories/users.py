@@ -1,10 +1,10 @@
-from sqlalchemy import select, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 # models
 from src.models.users import BlackListModel, Roles, TokenModel, UserModel
-
 # schemas
 from src.schemas.users import UserSchema, UserUpdateByAdminSchema
 

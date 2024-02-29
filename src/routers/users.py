@@ -1,41 +1,49 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, Security, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.conf import messages
+from src.dependencies.database import get_db
+from src.models.users import Roles, UserModel
+from src.schemas.users import (UserUpdateAvatarSchema, UserMyResponseSchema, UserResponseExtendedSchema,
+                               UserUpdateByAdminSchema, UserUpdateEmailSchema, UserAdminResponseSchema)
+from src.services.auth import auth_service
+from src.services.photos import PhotoService
 from src.services.cloudinary import CloudinaryService
 from src.services.roles import RoleChecker
-
-from src.dependencies.database import get_db
-from src.schemas.users import (
-    UserResponse,
-    UserUpdateEmailSchema,
-    UserUpdateAvatarSchema,
-    UserUpdateByAdminSchema,
-)
-from src.services.auth import auth_service
-from src.models.users import Roles, UserModel
-from src.services.auth import AuthService
-from src.conf import messages
 
 router_users = APIRouter(prefix="/users", tags=["Users"])
 
 
-@router_users.get("/my_profile", response_model=UserResponse)
+@router_users.get("/my_profile",
+                  response_model=UserMyResponseSchema
+                  )
 async def get_current_user(
     current_user: UserModel = Depends(auth_service.get_current_user),
-    db: AsyncSession = Depends(get_db),
+    db: AsyncSession = Depends(get_db)
 ):
     """
     Endpoint to retrieve the information of the currently authenticated user.
-    All depends will be later
-    Need model with all fields excludes password, is_active. Can show the user role (admin|moderator|user).
+
+    Can show the user role (admin|moderator|user).
     """
+    # to view how many photos user have
+    # picture_count = await PhotoService(db).get_photo_count(user_id=current_user.id)
+    #
+    # return UserMyResponseSchema(username=current_user.username,
+    #                             email=current_user.email,
+    #                             avatar=current_user.avatar,
+    #                             role=current_user.role,
+    #                             picture_count=picture_count,
+    #                             created_at=current_user.created_at
+    #                             )
     return current_user
 
 
-# lefosir704@lendfash.com
-
-
 @router_users.put(
-    "/my_profile/email", response_model=None, dependencies=None, status_code=None
+    "/my_profile/email",
+    response_model=UserMyResponseSchema,
+    dependencies=None,
+    status_code=None
 )
 async def update_email_current_user(
     body: UserUpdateEmailSchema = Depends(),
@@ -60,7 +68,10 @@ async def update_email_current_user(
 
 
 @router_users.put(
-    "/my_profile/avatar", response_model=None, dependencies=None, status_code=None
+    "/my_profile/avatar",
+    response_model=UserMyResponseSchema,
+    dependencies=None,
+    status_code=None
 )
 async def update_avatar_current_user(
     body: UserUpdateAvatarSchema = Depends(),
@@ -83,12 +94,13 @@ async def update_avatar_current_user(
     return current_user
 
 
-@router_users.get("/{username}", response_model=UserResponse)
+@router_users.get("/{username}",
+                  response_model=UserResponseExtendedSchema,
+                  dependencies=[Depends(RoleChecker([Roles.admin, Roles.moderator, Roles.users]))]
+                  )
 async def get_user(
     username: str,
     db: AsyncSession = Depends(get_db),
-    auth_service: AuthService = Depends(),
-    current_user: UserModel = Depends(auth_service.get_current_user),
 ):
     """
     Endpoint to retrieve the profile information of a specific user by username.
@@ -98,26 +110,31 @@ async def get_user(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
-    return user_info
+    # to view how many photos user have
+    picture_count = await PhotoService(db).get_photo_count(user_id=user_info.id)
+
+    return UserResponseExtendedSchema(username=user_info.username,
+                                      avatar=user_info.avatar,
+                                      role=user_info.role,
+                                      picture_count=picture_count,
+                                      is_active=user_info.is_active,
+                                      confirmed=user_info.confirmed,
+                                      created_at=user_info.created_at)
 
 
 @router_users.put(
     "/{username}",
-    response_model=None,
+    response_model=UserAdminResponseSchema,
     dependencies=[Depends(RoleChecker([Roles.admin]))],
 )
 async def update_user(
     username: str,
     body: UserUpdateByAdminSchema = Depends(),
-    db: AsyncSession = Depends(get_db),
-    current_user: UserModel = Depends(auth_service.get_current_user),
+    db: AsyncSession = Depends(get_db)
 ):
     """
-    Method put for username only if admin. Depends will be later.
+    Method put for username only if admin.
 
-    All depends will be later
-
-    Need model with fields: is_active, role
     Show everything about user (excludes password), can change only: is_active, role
     """
     user = await auth_service.get_user_by_username(username, db)
@@ -126,6 +143,5 @@ async def update_user(
             status_code=status.HTTP_404_NOT_FOUND, detail=messages.ACCOUNT_NOT_FOUND
         )
     user = await auth_service.update_user_by_admin(user.id, body, db)
-
 
     return user

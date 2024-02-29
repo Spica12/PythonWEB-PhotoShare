@@ -1,14 +1,13 @@
 from typing import List
+from uuid import UUID
 
 from fastapi import Depends, HTTPException, Request, status
-
-from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.conf import messages
 from src.models.users import Roles, UserModel
-from src.services.auth import auth_service
 from src.repositories.users import UserRepo
+from src.services.auth import auth_service
 
 
 class RoleChecker:

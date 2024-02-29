@@ -1,15 +1,17 @@
 from io import BytesIO
-from fastapi import HTTPException, UploadFile, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
-from PIL import Image
 
-from src.conf.config import config
+from fastapi import HTTPException, UploadFile, status
+from PIL import Image
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.conf import messages
+from src.conf.config import config
 from src.models.photos import PhotoModel
 from src.models.users import UserModel
-from src.repositories.photos import PhotoRepo
 from src.repositories.comments import CommentRepo
+from src.repositories.photos import PhotoRepo
+from src.repositories.users import UserRepo
 
 
 class PhotoService:
@@ -63,7 +65,7 @@ class PhotoService:
         return result
 
     async def get_one_photo_page(self, photo_id: int, skip: int, limit: int):
-        result = await self.repo.get_photo_page(photo_id, skip, limit)
+        result = await self.repo.get_photo_page(photo_id)
         if result is not None:
             # if we find photo
             # translate result to dict
@@ -92,3 +94,7 @@ class PhotoService:
             img.verify()
         except Exception as e:
             raise HTTPException(status_code=400, detail=messages.INVALID_FILE_NOT_IMAGE)
+
+    async def get_photo_count(self, user_id: UUID):
+        count = await self.repo.get_picture_count(user_id)
+        return count

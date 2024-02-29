@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 from typing import List, Optional
-from fastapi import File, UploadFile
 
+from fastapi import File, UploadFile
 from pydantic import BaseModel, Field
 
 
@@ -36,6 +36,7 @@ class ImageExtendedResponseSchema(ImageResponseRatingSchema):
 
 class ImageResponseAfterUpdateSchema(ImageBaseResponseSchema):
     updated_at: datetime
+
 
 class ImageResponseAfterCreateSchema(ImageResponseAfterUpdateSchema):
     public_id: str

@@ -1,12 +1,10 @@
 from datetime import datetime
-from typing import Optional, Dict, Union
+from typing import Dict, Optional, Union
 
 from pydantic import BaseModel, Field
 
 
 class TransformSchema(BaseModel):
-    """Pydantic model for validating incoming transformation parameters."""
-
     transformation_params: Dict[str, Union[str, int]] = Field(
         default_factory=dict,
         example={
@@ -21,8 +19,6 @@ class TransformSchema(BaseModel):
 
 
 class TransformResponse(BaseModel):
-    """Pydantic model for serializing transformation data in responses."""
-
     id: int
     original_picture_id: int
     url: str

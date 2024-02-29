@@ -1,40 +1,26 @@
-from fastapi import (
-    APIRouter,
-    HTTPException,
-    Security,
-    status,
-    Depends,
-    BackgroundTasks,
-    Request,
-)
+from fastapi import (APIRouter, BackgroundTasks, Depends, HTTPException,
+                     Request, Security, status)
 from fastapi.responses import RedirectResponse
+from fastapi.security import (HTTPAuthorizationCredentials, HTTPBearer,
+                              OAuth2PasswordRequestForm)
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    OAuth2PasswordRequestForm,
-    HTTPBearer,
-)
-from src.models.users import UserModel
 
+from src.conf import messages
 from src.dependencies.database import get_db
-
-from src.schemas.users import (
-    UserSchema,
-    UserResponse,
-    TokenSchema,
-    RequestPasswordResetSchema,
-)
+from src.models.users import UserModel
+from src.schemas.users import (RequestPasswordResetSchema, TokenSchema,
+                               UserSchema, UserMyResponseSchema)
 from src.services.auth import auth_service
 from src.services.email import EmailService
-from src.conf import messages
-from src.repositories.users import UserRepo
 
 router_auth = APIRouter(prefix="/auth", tags=["Auth"])
 get_refresh_token = HTTPBearer()
 
 
 @router_auth.post(
-    "/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED
+    "/register",
+    response_model=UserMyResponseSchema,
+    status_code=status.HTTP_201_CREATED
 )
 async def register(
     body: UserSchema,
@@ -163,7 +149,6 @@ async def confirm_email(token: str, db: AsyncSession = Depends(get_db)):
 @router_auth.get("/password-reset/{token}", response_model=None)
 async def password_reset(
     token: str,
-    request: Request,
     bt: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):

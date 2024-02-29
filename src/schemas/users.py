@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-import uuid
+
 from fastapi import File, UploadFile
 from pydantic import BaseModel, EmailStr, Field, HttpUrl
 
@@ -20,19 +20,31 @@ class UserSchema(RequestEmail):
     password: str = Field(min_length=4, max_length=20)
 
 
-class UserResponse(RequestEmail, UserNameSchema):
-    id: uuid.UUID
-    # username: str
-    # email: EmailStr
+class UserMyResponseSchema(UserNameSchema, RequestEmail):
     avatar: str | None
     role: Roles
-    # picture_count: Optional[int]
-    confirmed: bool
+    created_at: datetime
+
+
+class UserResponseSchema(UserNameSchema):
+    # id: uuid.UUID
+    # username: str
+    avatar: str | None
+    role: Roles
     is_active: bool
+    confirmed: bool
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class UserResponseExtendedSchema(UserResponseSchema):
+    picture_count: Optional[int | None]
+
+
+class UserAdminResponseSchema(UserResponseSchema, RequestEmail):
+    confirmed: bool
 
 
 class UserUpdateEmailSchema(BaseModel):

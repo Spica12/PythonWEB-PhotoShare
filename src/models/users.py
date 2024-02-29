@@ -2,10 +2,12 @@ import enum
 import uuid
 from datetime import datetime
 
-from src.models.base import Base
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, func, Enum
+from sqlalchemy import (Boolean, DateTime, Enum, ForeignKey, Integer, String,
+                        func)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from src.models.base import Base
 
 
 class Roles(enum.Enum):

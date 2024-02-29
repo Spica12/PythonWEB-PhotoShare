@@ -1,5 +1,6 @@
-import qrcode
 from io import BytesIO
+
+import qrcode
 
 
 class QRCodeService:
