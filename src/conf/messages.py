@@ -31,3 +31,4 @@ EMAIL_IS_ALREADY_BUSY = 'This email is already busy'
 USERNAME_IS_ALREADY_BUSY = 'This username is already busy'
 INVALID_FILE_NOT_IMAGE = 'File is not an image. Only images are allowed'
 TOO_BIG_FILE = "File size is too large. Maximum file size is 10MB"
+MAX_LEN_TAG = "Tag is too long. Maximum length is 20 characters"
