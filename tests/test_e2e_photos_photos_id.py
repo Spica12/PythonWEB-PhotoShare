@@ -237,7 +237,7 @@ async def test_update_photo_by_another_user(client):
         "password": "test",
         "is_active": True,
         "confirmed": True,
-        "role": Roles.admin,
+        "role": Roles.users,
     }
     user = await create_user_test(**user_data)
     another_user = await create_user_test(**another_user_data)
