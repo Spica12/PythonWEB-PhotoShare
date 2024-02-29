@@ -1,8 +1,9 @@
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.repositories.rating import RatingRepo
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.repositories.photos import PhotoRepo
+from src.repositories.rating import RatingRepo
 from src.repositories.users import UserRepo
 
 

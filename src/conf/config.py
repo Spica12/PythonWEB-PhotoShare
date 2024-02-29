@@ -1,10 +1,9 @@
+import logging
 from pathlib import Path
 
-from pydantic import ConfigDict, EmailStr, field_validator
+from pydantic import ConfigDict, field_validator
 from pydantic_settings import BaseSettings
 
-# TODO Testing
-import logging
 # logging global rules
 logging.basicConfig(
     format="%(asctime)s %(message)s",

@@ -1,8 +1,7 @@
-import logging
-
-from sqlalchemy import select, and_, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from sqlalchemy import and_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.models.photos import RatingModel
 from src.models.users import UserModel

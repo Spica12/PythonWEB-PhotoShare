@@ -1,10 +1,10 @@
-import logging
-
-from sqlalchemy import select, and_, func
-from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
 
-from src.models.photos import PhotoModel, TransformedImageLinkModel, RatingModel, CommentModel, TagModel, photos_tags
+from sqlalchemy import and_, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.models.photos import (PhotoModel, RatingModel, TagModel,
+                               TransformedImageLinkModel, photos_tags)
 from src.models.users import UserModel
 
 
@@ -110,7 +110,7 @@ class PhotoRepo:
         result = await self.db.execute(stmt)
         return result
 
-    async def get_photo_page(self, photo_id: int, skip: int, limit: int):
+    async def get_photo_page(self, photo_id: int, skip: int | None = None, limit: int | None = None):
         stmt = (select(PhotoModel.id,
                        PhotoModel.image_url,
                        PhotoModel.description,
@@ -131,3 +131,9 @@ class PhotoRepo:
                           ))
         result = await self.db.execute(stmt)
         return result.first()
+
+    async def get_picture_count(self, user_id: UUID):
+        stmt = select(func.count(PhotoModel.id)).where(PhotoModel.user_id == user_id)
+        result = await self.db.execute(stmt)
+        result = result.scalar()
+        return result

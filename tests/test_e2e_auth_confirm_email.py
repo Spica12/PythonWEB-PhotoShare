@@ -19,13 +19,6 @@ from pydantic import BaseModel, EmailStr
 from src.repositories.users import UserRepo
 
 
-
-
-
-
-
-
-
 def test_confirmed_email(client, monkeypatch):
     # Given
     user_email = "user@example.com"

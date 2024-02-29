@@ -1,8 +1,3 @@
-from src.models.users import UserModel, TokenModel, BlackListModel
-from src.models.photos import (
-    PhotoModel,
-    TransformedImageLinkModel,
-    TagModel,
-    CommentModel,
-    RatingModel,
-)
+from src.models.photos import (CommentModel, PhotoModel, RatingModel, TagModel,
+                               TransformedImageLinkModel)
+from src.models.users import BlackListModel, TokenModel, UserModel
