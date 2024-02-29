@@ -5,10 +5,10 @@ PythonWEB-PhotoShare is a REST API application constructed with the FastAPI fram
 
 ---
 
-#Link to deploy
 
 
-## Used Technologies 
+[![Deploy Status](https://img.shields.io/badge/deploy-active-green?style=flat&link=https://photoshare-pythonweb.koyeb.app/docs/)](https://photoshare-pythonweb.koyeb.app/docs)
+
 
 | Technology  | Description                                      |
 |--------------|--------------------------------------------------|
